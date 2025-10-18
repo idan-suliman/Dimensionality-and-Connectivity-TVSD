@@ -1,0 +1,9 @@
+/__ pycache__/
+*.png
+
+cca.py
+pca.py
+GeneralFunctions.py
+temp2.py
+temp.py
+temp3.py
