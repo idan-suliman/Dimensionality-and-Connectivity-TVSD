@@ -7,7 +7,8 @@
 **Advisor:** Dr. Zvi Roth  
 **Contact:** Idansu123456@gmail.com
 
-<img width="453" height="169" alt="image" src="https://github.com/user-attachments/assets/a9d95a71-9d7f-4318-9600-d70f6bfb84ba" />
+<img width="453" height="169" alt="Screenshot 2025-10-15 152010" src="https://github.com/user-attachments/assets/0e57bba0-8091-44f0-9cac-c2fb9753bff1" />
+
 
 ---
 
@@ -55,9 +56,9 @@ TVSD_CODE/
    └─ figures/              # README/slide assets (logo, connectivity, etc.)
 ```
 
-<img width="1376" height="510" alt="image" src="https://github.com/user-attachments/assets/3d7f227b-054b-46b6-a930-e0d65d626f5e" />
+<img width="1437" height="539" alt="packages_TVSD_CODE" src="https://github.com/user-attachments/assets/42c55e2b-93e1-4756-b7c0-fd79503a6508" />
 
-<img width="2413" height="484" alt="image" src="https://github.com/user-attachments/assets/03d0b677-665d-4ff6-9231-b5b374166315" />
+<img width="2413" height="484" alt="classes_TVSD_CODE" src="https://github.com/user-attachments/assets/ef1f2efa-ba8b-429d-a662-47eb0fefb686" />
 
 
 
@@ -104,7 +105,8 @@ To convert: `logical_rois = physical_rois[mapping]`.
 QC revealed a **continuous block of 64 non-functional electrodes** at **logical indices 256–319 (inclusive)** — i.e., **after applying the physical→logical mapping**.  
 Per-electrode statistics showed **near-zero STD across trials**, indicating no meaningful neural signal.
 
-<img width="1485" height="608" alt="image" src="https://github.com/user-attachments/assets/23be8bc0-e1bd-4217-b1ed-a0dd82c8e3ff" />
+<img width="1485" height="608" alt="Screenshot 2025-10-15 183400" src="https://github.com/user-attachments/assets/d1daef49-93cf-4829-8b05-08a383e9c1df" />
+
 
 
 
