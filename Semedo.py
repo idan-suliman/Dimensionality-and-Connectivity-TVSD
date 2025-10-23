@@ -80,6 +80,13 @@ def make_semedo_figure(
         lim_max = max(lim_max, base_min + 1)
         return (base_min, lim_max)
 
+    def _jitter(values, rng: np.random.Generator, *, scale: float = 0.15):
+        """Add small uniform noise to integer-valued coordinates for visual separation."""
+        arr = np.asarray(values, dtype=float)
+        if arr.size == 0:
+            return arr
+        return arr + rng.uniform(-scale, scale, size=arr.shape)
+
     # ====================== Compute global RRR results (Panels A + B) ======================
     perf_full  = _perf(False)  # Standard V1→Target mapping
     perf_match = _perf(True)   # Matched V1 subset → (remaining V1)
@@ -155,13 +162,13 @@ def make_semedo_figure(
     # =============================== Create Figure Layout ===============================
     fig = plt.figure(figsize=(12.6, 8.2), dpi=400)
     fig.subplots_adjust(left=0.12, right=0.985, top=0.90, bottom=0.12,
-                        wspace=0.38, hspace=0.26)
+                        wspace=0.32, hspace=0.30)
 
-    gs  = gridspec.GridSpec(2, 3, width_ratios=[3.2, 2.5, 2.5])
+    gs  = gridspec.GridSpec(2, 2, width_ratios=[3.2, 2.6])
     axA = fig.add_subplot(gs[0, 0])
     axB = fig.add_subplot(gs[1, 0])
-    axC = fig.add_subplot(gs[:, 1])
-    axD = fig.add_subplot(gs[:, 2])
+    axC = fig.add_subplot(gs[0, 1])
+    axD = fig.add_subplot(gs[1, 1])
 
     dims   = np.arange(1, d_max + 1)
     tgt    = runtime.get_consts().REGION_ID_TO_NAME[target_region]
@@ -173,6 +180,8 @@ def make_semedo_figure(
         ax.xaxis.labelpad = 16
         ax.yaxis.labelpad = 20
 
+    for ax in (axC,axD):
+        ax.set_box_aspect(1)
     # =============================== Panel A (Full RRR curve) ===============================
     axA.errorbar(dims, perf_full["rrr_R2_mean"], yerr=perf_full["rrr_R2_sem"],
                  fmt="o-", ms=3.8, lw=1.35, capsize=3, color=colA, zorder=2)
@@ -213,9 +222,13 @@ def make_semedo_figure(
     else:
         xmin, xmax = _square_limits([1], [1], base_min=1, scale=1.5)
 
+    rng_jitter = np.random.default_rng(random_state)
+
     axC.plot([xmin, xmax], [xmin, xmax], ls="--", lw=0.9, color="k")  # y=x reference
     if np.isfinite(d95_match_g) and np.isfinite(d95_full_g):
-        axC.scatter([xg], [yg], s=175, facecolors="white", edgecolors="black", zorder=4)
+        jitter_x = _jitter([xg], rng_jitter)[0]
+        jitter_y = _jitter([yg], rng_jitter)[0]
+        axC.scatter([jitter_x], [jitter_y], s=175, facecolors="white", edgecolors="black", zorder=4)
     axC.set_xlim(xmin, xmax)
     axC.set_ylim(xmin, xmax)
     axC.grid(False)
@@ -228,7 +241,9 @@ def make_semedo_figure(
     else:
         xmin_d, xmax_d = (1, max(2, int(np.ceil(1.5 * d_max))))
 
-    axD.scatter(d95_match_rep, d95_full_rep, s=60, facecolors="white", edgecolors="black")
+    jitter_match = _jitter(d95_match_rep, rng_jitter)
+    jitter_full = _jitter(d95_full_rep, rng_jitter)
+    axD.scatter(jitter_match, jitter_full, s=60, facecolors="white", edgecolors="black")
     axD.plot([xmin_d, xmax_d], [xmin_d, xmax_d], ls="--", lw=0.9, color="k")
     axD.set_xlim(xmin_d, xmax_d)
     axD.set_ylim(xmin_d, xmax_d)
@@ -236,13 +251,6 @@ def make_semedo_figure(
     axD.grid(False)
     axD.text(-0.07, 1.01, "D", transform=axD.transAxes,
              ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
-
-    # =============================== Adjust C–D spacing ===============================
-    posC = axC.get_position()
-    posD = axD.get_position()
-    shift = 0.012
-    axC.set_position([posC.x0 + shift, posC.y0, posC.width, posC.height])
-    axD.set_position([posD.x0 - shift, posD.y0, posD.width, posD.height])
 
     # =============================== Shared axis labels ===============================
     for ax in (axA, axB, axC, axD):
@@ -287,7 +295,6 @@ def make_semedo_figure(
     fig.savefig(out_dir / fname, dpi=400, facecolor="white")
     plt.close(fig)
     print(f"[✓] Semedo figure saved → {out_dir/fname}")
-
 
 
 def make_subset_semedo_figure(
