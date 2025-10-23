@@ -1,8 +1,7 @@
 from rrr import RRR_Centered_matching
 from runtime import runtime
 from matchingSubset import MATCHINGSUBSET
-import numpy as np, matplotlib.pyplot as plt
-from pathlib import Path    
+import numpy as np, matplotlib.pyplot as plt    
 from matplotlib import gridspec
 from itertools import cycle
 import matplotlib.patheffects as pe
@@ -47,11 +46,6 @@ def make_semedo_figure(
         id_print = lambda g: f"set {g:2}"
 
     # ============================ Helper functions ============================
-    def _win(rid: int) -> slice:
-        """Return time window slice for given region and analysis type."""
-        return slice(0, 100) if analysis_type == "baseline100" \
-               else slice(*runtime.get_consts().REGION_WINDOWS[rid])
-
     def _d95(rrr_mean: np.ndarray, ridge_mean: float) -> int:
         """Return dimensionality at which RRR reaches 95% of ridge performance."""
         thr = 0.95 * float(ridge_mean)
@@ -113,13 +107,24 @@ def make_semedo_figure(
     # ====================== Compute per-group dimensionalities (Panel D) ======================
     d95_full_rep, d95_match_rep = [], []
 
-    def _mat(rid: int, idx: np.ndarray, sub_tr: list) -> np.ndarray:
-        """Assemble mean MUA matrix across trials for a given region and subset."""
-        M = np.stack([tr["mua"][_win(rid)][:, idx].mean(0) for tr in sub_tr],
-                     dtype=np.float32)
-        if analysis_type == "residual":
-            M -= M.mean(0, keepdims=True)
-        return M
+    def _mat(rid: int, idx: np.ndarray, sub_tr: list[dict]) -> np.ndarray:
+        """Assemble mean MUA matrix using the config helper for consistent preprocessing."""
+        if len(sub_tr) == 0:
+            raise ValueError("Trial subset cannot be empty when building matrices.")
+
+        mat = runtime.get_cfg().build_trial_matrix(
+            region_id=rid,
+            analysis_type=analysis_type,
+            trials=sub_tr,
+            rois=np.asarray(idx, dtype=int),
+        )
+
+        # Ensure downstream routines receive float32 arrays (build_trial_matrix already returns
+        # float32, but we guard against older caches).
+        if mat.dtype != np.float32:
+            mat = mat.astype(np.float32, copy=False)
+
+        return mat
 
     for g_idx, grp in enumerate(groups):
         # Unmatched (V1 → target)
@@ -284,6 +289,7 @@ def make_semedo_figure(
     print(f"[✓] Semedo figure saved → {out_dir/fname}")
 
 
+
 def make_subset_semedo_figure(
     source_region : int = 1,      # V1
     target_region : int = 3,      # IT (or 2 = V4)
@@ -292,7 +298,7 @@ def make_subset_semedo_figure(
     d_max         : int  = 35,
     alpha         : float | None = None,
     outer_splits  : int  = 2,
-    inner_splits  : int  = 2,
+    inner_splits  : int  = 3,
     random_state  : int  = 0,
     # ---- subset parameters ----
     n_run   : int = 5,
@@ -307,23 +313,20 @@ def make_subset_semedo_figure(
         C   – single dot per run (d95_match vs. d95_full)
         D   – multiple dots per run (subset-level)
     """
+    cfg     = runtime.get_cfg()
+    consts  = runtime.get_consts()
     rng     = np.random.default_rng(random_state)
-    trials  = runtime.get_cfg()._load_trials()
+    trials  = cfg._load_trials()
 
-    # ---------------- helpers -------------------
-    def _win(rid):
-        return slice(0, 100) if analysis_type == "baseline100" \
-            else slice(*runtime.get_consts().REGION_WINDOWS[rid])
+    # ---------------- build matrix -------------------
+    def _matrix(rid: int, idx: np.ndarray, sub_trials: list[dict]) -> np.ndarray:
+        return cfg.build_trial_matrix(
+            region_id=rid,
+            analysis_type=analysis_type,
+            trials=sub_trials,
+            rois=idx,
+        )
 
-    def _matrix(rid, idx, sub_trials):
-        M = np.stack([tr["mua"][_win(rid)][:, idx].mean(0)
-                    for tr in sub_trials], dtype=np.float32)
-        if analysis_type == "residual":
-            stim = np.array([tr["stimulus_id"] for tr in sub_trials])
-            for s in np.unique(stim):
-                m = stim == s
-                M[m] -= M[m].mean(0, keepdims=True)
-        return M
 
     def _d95(r2_vec, ridge_val):
         idx = np.where(r2_vec >= 0.95*ridge_val)[0]
@@ -345,13 +348,13 @@ def make_subset_semedo_figure(
         return (base_min, lim_max)
 
     # ---------------- electrode indices -------------------
-    rois = runtime.get_cfg().get_rois()
+    rois = cfg.get_rois()
     all_src_idx = np.where(rois == source_region)[0]
     all_tgt_idx = np.where(rois == target_region)[0]
 
     base_cols = ["#9C1C1C", "#1565C0", "#2E7D32", "#7B1FA2", "#F57C00", "#00796B"]
     col_cycle = cycle(base_cols)
-    tgt_nm = runtime.get_consts().REGION_ID_TO_NAME[target_region]
+    tgt_nm = consts.REGION_ID_TO_NAME[target_region]
 
     # ---------------- figure layout -------------------
     fig = plt.figure(figsize=(12.6, 8.2), dpi=400)
@@ -379,13 +382,12 @@ def make_subset_semedo_figure(
         src_subset = rng.choice(all_src_idx, n_src, replace=False)
         tgt_subset = rng.choice(all_tgt_idx, n_tgt, replace=False)
 
-        mean_src = np.stack([tr["mua"][_win(1)][:, src_subset].mean(0)
-                            for tr in trials]).mean(0)
+        mean_src = _matrix(source_region, src_subset, trials).mean(0)
         order_src = np.argsort(mean_src)
         match_src  = src_subset[order_src[:n_tgt]]
         src_remain = src_subset[~np.isin(src_subset, match_src)]
 
-        X_full = _matrix(1, src_subset, trials)
+        X_full = _matrix(source_region, src_subset, trials)
         Y_full = _matrix(target_region, tgt_subset, trials)
         res_full = RRR_Centered_matching._performance_from_mats(
             Y_full, X_full, d_max=d_max, alpha=alpha,
@@ -393,8 +395,8 @@ def make_subset_semedo_figure(
             random_state=random_state + run_idx
         )
 
-        X_match = _matrix(1, src_remain, trials)
-        Y_match = _matrix(1, match_src, trials)
+        X_match = _matrix(source_region, src_remain, trials)
+        Y_match = _matrix(source_region, match_src, trials)
         res_match = RRR_Centered_matching._performance_from_mats(
             Y_match, X_match, d_max=d_max, alpha=alpha,
             outer_splits=outer_splits, inner_splits=inner_splits,
@@ -433,15 +435,15 @@ def make_subset_semedo_figure(
             sub_tr = [trials[i] for i in ch]
             res_f_sub = RRR_Centered_matching._performance_from_mats(
                 _matrix(target_region, tgt_subset, sub_tr),
-                _matrix(1, src_subset, sub_tr),
+                _matrix(source_region, src_subset, sub_tr),
                 d_max=d_max, alpha=alpha,
                 outer_splits=max(2, outer_splits),
                 inner_splits=max(2, inner_splits),
                 random_state=random_state + run_idx
             )
             res_m_sub = RRR_Centered_matching._performance_from_mats(
-                _matrix(1, match_src, sub_tr),
-                _matrix(1, src_remain, sub_tr),
+                _matrix(source_region, match_src, sub_tr),
+                _matrix(source_region, src_remain, sub_tr),
                 d_max=d_max, alpha=alpha,
                 outer_splits=max(2, outer_splits),
                 inner_splits=max(2, inner_splits),
@@ -550,4 +552,5 @@ def make_subset_semedo_figure(
 
 
 
-
+runtime.set_cfg("Monkey F",1)
+make_semedo_figure(1,2,analysis_type="baseline100",k_subsets=10)
