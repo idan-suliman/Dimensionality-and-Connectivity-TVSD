@@ -160,7 +160,7 @@ def make_semedo_figure(
               f"d95_full={d95_full_rep[-1]}  d95_match={d95_match_rep[-1]}")
 
     # =============================== Create Figure Layout ===============================
-    fig = plt.figure(figsize=(12.6, 8.2), dpi=400)
+    fig = plt.figure(figsize=(14, 9.4), dpi=400)
     fig.subplots_adjust(left=0.12, right=0.985, top=0.90, bottom=0.12,
                         wspace=0.26, hspace=0.30)
 
@@ -179,9 +179,8 @@ def make_semedo_figure(
         ax.tick_params(labelsize=tick_fs)
         ax.xaxis.labelpad = 16
         ax.yaxis.labelpad = 20
-
-    for ax in (axC,axD):
         ax.set_box_aspect(1)
+        
     # =============================== Panel A (Full RRR curve) ===============================
     axA.errorbar(dims, perf_full["rrr_R2_mean"], yerr=perf_full["rrr_R2_sem"],
                  fmt="o-", ms=3.8, lw=1.35, capsize=3, color=colA, zorder=2)
