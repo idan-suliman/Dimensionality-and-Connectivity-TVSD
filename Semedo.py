@@ -25,11 +25,8 @@ def make_semedo_figure(
     trials = runtime.get_cfg()._load_trials()
 
     # Create repetition index if not available (needed for subset division)
-    if k_subsets is None and "rep_idx" not in trials[0]:
-        if "allmat_row" not in trials[0]:
-            raise RuntimeError("allmat_row missing – cannot derive repetitions.")
-        for tr in trials:
-            tr["rep_idx"] = int(tr["allmat_row"][3]) - 1  # Convert 1–30 → 0–29
+    for tr in trials:
+        tr["rep_idx"] = int(tr["allmat_row"][3]) - 1  # Convert 1–30 → 0–29
 
     # Group trials by repetitions or random subsets
     if k_subsets is None:
@@ -39,7 +36,8 @@ def make_semedo_figure(
         id_print = lambda g: f"rep {g:2}"
     else:
         rng     = np.random.default_rng(random_state)
-        idxs    = np.arange(len(trials)); rng.shuffle(idxs)
+        idxs    = np.arange(len(trials)) 
+        rng.shuffle(idxs)
         splits  = np.array_split(idxs, k_subsets)
         groups  = [[trials[i] for i in part] for part in splits]
         label_D = f"{k_subsets} random subsets"
@@ -160,11 +158,11 @@ def make_semedo_figure(
               f"d95_full={d95_full_rep[-1]}  d95_match={d95_match_rep[-1]}")
 
     # =============================== Create Figure Layout ===============================
-    fig = plt.figure(figsize=(14, 9.4), dpi=400)
-    fig.subplots_adjust(left=0.12, right=0.985, top=0.90, bottom=0.12,
-                        wspace=0.26, hspace=0.30)
+    fig = plt.figure(figsize=(14, 13), dpi=400)
+    fig.subplots_adjust(left=0.10, right=0.97, top=0.90, bottom=0.12,
+                        wspace=0.15, hspace=0.30)
 
-    gs  = gridspec.GridSpec(2, 2, width_ratios=[3.2, 2.6])
+    gs  = gridspec.GridSpec(2, 2)
     axA = fig.add_subplot(gs[0, 0])
     axB = fig.add_subplot(gs[1, 0])
     axC = fig.add_subplot(gs[0, 1])
@@ -173,14 +171,9 @@ def make_semedo_figure(
     dims   = np.arange(1, d_max + 1)
     tgt    = runtime.get_consts().REGION_ID_TO_NAME[target_region]
     colA, colB = "#9C1C1C", "#1565C0"
-    label_fs, tick_fs = 15, 12
+    label_fs, tick_fs = 17, 12
 
-    for ax in (axA, axB, axC, axD):
-        ax.tick_params(labelsize=tick_fs)
-        ax.xaxis.labelpad = 16
-        ax.yaxis.labelpad = 20
-        ax.set_box_aspect(1)
-        
+   
     # =============================== Panel A (Full RRR curve) ===============================
     axA.errorbar(dims, perf_full["rrr_R2_mean"], yerr=perf_full["rrr_R2_sem"],
                  fmt="o-", ms=3.8, lw=1.35, capsize=3, color=colA, zorder=2)
@@ -194,8 +187,9 @@ def make_semedo_figure(
 
     axA.set_title(f"Predicting {tgt}", color=colA, pad=10, fontsize=15)
     axA.grid(alpha=.25)
-    axA.text(-0.12, 1.05, "A", transform=axA.transAxes,
+    axA.text(-0.07, 1.05, "A", transform=axA.transAxes,
              ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
+    axA.set_box_aspect(1)
 
     # =============================== Panel B (Matched subset RRR curve) ===============================
     axB.errorbar(dims, perf_match["rrr_R2_mean"], yerr=perf_match["rrr_R2_sem"],
@@ -208,11 +202,11 @@ def make_semedo_figure(
         _labeled_dot(axB, int(d95_match_g), float(r2d), int(d95_match_g),
                      face=colB, edge="k", size=240, text_size=12, text_color="white")
 
-    axB.set_xlabel("Predictive dimensions (d)", fontsize=label_fs, labelpad=16)
     axB.set_title(f"Predicting V1-match {tgt}", color=colB, pad=10, fontsize=15)
     axB.grid(alpha=.25)
-    axB.text(-0.12, 1.05, "B", transform=axB.transAxes,
+    axB.text(-0.07, 1.05, "B", transform=axB.transAxes,
              ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
+    axB.set_box_aspect(1)
 
     # =============================== Panel C (Global comparison: A vs B) ===============================
     if np.isfinite(d95_match_g) and np.isfinite(d95_full_g):
@@ -230,11 +224,12 @@ def make_semedo_figure(
         axC.scatter([jitter_x], [jitter_y], s=175, facecolors="white", edgecolors="black", zorder=4)
     axC.set_xlim(xmin, xmax)
     axC.set_ylim(xmin, xmax)
+    axC.set_aspect('equal', adjustable='box')
     ticks_c = np.arange(xmin, xmax + 1, max(1, int(np.ceil((xmax - xmin) / 6))))
     axC.set_xticks(ticks_c)
     axC.set_yticks(ticks_c)
     axC.grid(False)
-    axC.text(-0.12, 1.05, "C", transform=axC.transAxes,
+    axC.text(-0.07, 1.05, "C", transform=axC.transAxes,
              ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
 
     # =============================== Panel D (Per-group subsets) ===============================
@@ -249,12 +244,13 @@ def make_semedo_figure(
     axD.plot([xmin_d, xmax_d], [xmin_d, xmax_d], ls="--", lw=0.9, color="k")
     axD.set_xlim(xmin_d, xmax_d)
     axD.set_ylim(xmin_d, xmax_d)
+    axD.set_aspect('equal', adjustable='box')
     ticks_d = np.arange(xmin_d, xmax_d + 1, max(1, int(np.ceil((xmax_d - xmin_d) / 6))))
     axD.set_xticks(ticks_d)
     axD.set_yticks(ticks_d)
     axD.text(0.98, 0.02, label_D, transform=axD.transAxes, ha="right", va="bottom", fontsize=11)
     axD.grid(False)
-    axD.text(-0.12, 1.05, "D", transform=axD.transAxes,
+    axD.text(-0.07, 1.05, "D", transform=axD.transAxes,
              ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
 
     # =============================== Shared axis labels ===============================
@@ -269,6 +265,8 @@ def make_semedo_figure(
     left_ylabel_x     = boxA.x0 - 0.066
     right_ylabel_x    = boxC.x0 - 0.043
     right_xlabel_y    = min(boxC.y0, boxD.y0) - 0.058
+    left_xlabel_y    = min(boxA.y0, boxB.y0) - 0.058
+    left_block_xcent = 0.5 * (((boxA.x0 + boxA.x1) / 2) + ((boxB.x0 + boxB.x1) / 2))
     right_block_xcent = 0.5 * (((boxC.x0 + boxC.x1) / 2) + ((boxD.x0 + boxD.x1) / 2))
 
     fig.text(left_ylabel_x, left_col_ycenter,
@@ -279,6 +277,10 @@ def make_semedo_figure(
              f"{runtime.get_consts().REGION_ID_TO_NAME[target_region]} Predictive dimensions",
              va="center", ha="right", rotation="vertical", fontsize=label_fs+1, color=colA)
 
+    fig.text(left_block_xcent, left_xlabel_y,
+             "Predictive dimensions (d)",
+             va="top", ha="center", fontsize=label_fs+1, color="black")
+
     fig.text(right_block_xcent, right_xlabel_y,
              "Target V1 Predictive dimensions",
              va="top", ha="center", fontsize=label_fs+1, color=colB)
@@ -287,7 +289,7 @@ def make_semedo_figure(
     top_row_ymax = max(boxA.y1, boxC.y1)
     fig.suptitle(
         f"{runtime.get_cfg().get_monkey_name()}  |  {runtime.get_cfg().get_zscore_title()}  |  {analysis_type.upper()}",
-        fontsize=16, y=min(0.998, top_row_ymax + 0.080), fontweight="bold"
+        fontsize=18, y=min(0.998, top_row_ymax + 0.080), fontweight="bold"
     )
 
     # Save into folder reflecting current subset configuration
@@ -339,7 +341,6 @@ def make_subset_semedo_figure(
             rois=idx,
         )
 
-
     def _d95(r2_vec, ridge_val):
         idx = np.where(r2_vec >= 0.95*ridge_val)[0]
         return idx[0] + 1 if idx.size else np.nan
@@ -359,6 +360,13 @@ def make_subset_semedo_figure(
         lim_max = max(lim_max, base_min + 1)
         return (base_min, lim_max)
 
+    def _jitter(values, rng: np.random.Generator, *, scale: float = 0.15):
+        """Add small uniform noise to integer-valued coordinates for visual separation."""
+        arr = np.asarray(values, dtype=float)
+        if arr.size == 0:
+            return arr
+        return arr + rng.uniform(-scale, scale, size=arr.shape)
+
     # ---------------- electrode indices -------------------
     rois = cfg.get_rois()
     all_src_idx = np.where(rois == source_region)[0]
@@ -369,16 +377,16 @@ def make_subset_semedo_figure(
     tgt_nm = consts.REGION_ID_TO_NAME[target_region]
 
     # ---------------- figure layout -------------------
-    fig = plt.figure(figsize=(12.6, 8.2), dpi=400)
-    fig.subplots_adjust(left=0.12, right=0.985, top=0.90, bottom=0.12,
-                        wspace=0.38, hspace=0.26)
-    gs  = gridspec.GridSpec(2, 3, width_ratios=[3.2, 2.5, 2.5])
+    fig = plt.figure(figsize=(14, 13), dpi=400)
+    fig.subplots_adjust(left=0.10, right=0.97, top=0.90, bottom=0.12,
+                        wspace=0.15, hspace=0.30)
+    gs  = gridspec.GridSpec(2, 2)
     axA = fig.add_subplot(gs[0, 0])
     axB = fig.add_subplot(gs[1, 0])
-    axC = fig.add_subplot(gs[:, 1])
-    axD = fig.add_subplot(gs[:, 2])
+    axC = fig.add_subplot(gs[0, 1])
+    axD = fig.add_subplot(gs[1, 1])
 
-    label_fs, tick_fs = 15, 12
+    label_fs, tick_fs = 17, 12
     for ax in (axA, axB, axC, axD):
         ax.tick_params(labelsize=tick_fs)
         ax.xaxis.labelpad = 16
@@ -420,11 +428,13 @@ def make_subset_semedo_figure(
                      fmt="o-", ms=3.8, lw=1.35, capsize=3, color=col)
         axA.scatter([1], [res_full["ridge_R2_mean"]],
                     marker="^", s=90, color=col, edgecolors="k")
+        axA.set_box_aspect(1)
 
         axB.errorbar(dims, res_match["rrr_R2_mean"], yerr=res_match["rrr_R2_sem"],
                      fmt="o-", ms=3.8, lw=1.35, capsize=3, color=col)
         axB.scatter([1], [res_match["ridge_R2_mean"]],
                     marker="^", s=90, color=col, edgecolors="k")
+        axB.set_box_aspect(1)
 
         # ---- Global d95 values ----
         d95_f = _d95(res_full["rrr_R2_mean"], res_full["ridge_R2_mean"])
@@ -468,28 +478,37 @@ def make_subset_semedo_figure(
 
     # ---------------- Panels C + D -------------------
     xmin, xmax = _square_limits(d95_match_runs + [1], d95_full_runs + [1])
+    rng_jitter   = np.random.default_rng(random_state)
+    jitter_scale = 0.15
 
     # Panel C – נקודה אחת לכל ריצה
     for run_idx, (xf, yf) in enumerate(zip(d95_match_runs, d95_full_runs)):
         col = base_cols[run_idx % len(base_cols)]
-        axC.scatter(xf, yf, s=100, facecolors="white", edgecolors=col,
+        xj  = xf + rng_jitter.uniform(-jitter_scale, jitter_scale)
+        yj  = yf + rng_jitter.uniform(-jitter_scale, jitter_scale)
+        axC.scatter(xj, yj, s=100, facecolors="white", edgecolors=col,
                     linewidth=1.5, zorder=5)
 
     axC.plot([xmin, xmax], [xmin, xmax], ls="--", lw=0.9, color="k")
     axC.set_xlim(xmin, xmax)
     axC.set_ylim(xmin, xmax)
     axC.grid(False)
+    axC.set_box_aspect(1)
 
     # Panel D – מספר נקודות (subsets) לכל ריצה
     for (run_idx, yf), (_, xf) in zip(d95_full_subsets, d95_match_subsets):
         col = base_cols[run_idx % len(base_cols)]
-        axD.scatter(xf, yf, s=55, facecolors="white", edgecolors=col,
+        xj  = xf + rng_jitter.uniform(-jitter_scale, jitter_scale)
+        yj  = yf + rng_jitter.uniform(-jitter_scale, jitter_scale)
+        axD.scatter(xj, yj, s=55, facecolors="white", edgecolors=col,
                     linewidth=1.2)
+
 
     axD.plot([xmin, xmax], [xmin, xmax], ls="--", lw=0.9, color="k")
     axD.set_xlim(xmin, xmax)
     axD.set_ylim(xmin, xmax)
     axD.grid(False)
+    axD.set_box_aspect(1)
 
     # ---- Legend (only in Panel D) ----
     handles = [plt.Line2D([0], [0],
@@ -510,11 +529,10 @@ def make_subset_semedo_figure(
     tgt_label = f"{tgt_nm} Predictive dimensions"
     axA.set_title(f"Predicting {tgt_nm}", color="#9C1C1C", pad=10, fontsize=15)
     axB.set_title(f"Predicting V1-match {tgt_nm}", color="#1565C0", pad=10, fontsize=15)
-    axB.set_xlabel("Predictive dimensions (d)", fontsize=label_fs)
     for ax in (axA, axB): ax.grid(alpha=.25)
 
     for label, ax in zip("ABCD", (axA, axB, axC, axD)):
-        ax.text(-0.07, 1.01, label, transform=ax.transAxes,
+        ax.text(-0.07, 1.05, label, transform=ax.transAxes,
                 ha="left", va="bottom", fontsize=20, fontweight="bold")
 
     # shared axis labels
@@ -526,6 +544,8 @@ def make_subset_semedo_figure(
     right_ylabel_x = boxC.x0 - 0.043
     right_xlabel_y = min(boxC.y0, boxD.y0) - 0.058
     right_block_xcent = 0.5 * (((boxC.x0 + boxC.x1) / 2) + ((boxD.x0 + boxD.x1) / 2))
+    left_xlabel_y    = min(boxA.y0, boxB.y0) - 0.058
+    left_block_xcent = 0.5 * (((boxA.x0 + boxA.x1) / 2) + ((boxB.x0 + boxB.x1) / 2))
 
     fig.text(left_ylabel_x, left_col_ycenter,
              rf"Mean $R^2$  (outer {outer_splits}, inner {inner_splits})",
@@ -533,6 +553,11 @@ def make_subset_semedo_figure(
     fig.text(right_ylabel_x, right_block_ycent,
              f"{tgt_nm} Predictive dimensions",
              va="center", ha="right", rotation="vertical", fontsize=label_fs+1, color="#9C1C1C")
+    
+    fig.text(left_block_xcent, left_xlabel_y,
+            "Predictive dimensions (d)",
+            va="top", ha="center", fontsize=label_fs+1, color="black")
+
     fig.text(right_block_xcent, right_xlabel_y,
              "Target V1 Predictive dimensions",
              va="top", ha="center", fontsize=label_fs+1, color="#1565C0")
@@ -562,7 +587,3 @@ def make_subset_semedo_figure(
     print(f"[✓] Subset-Semedo figure saved → {out_dir / file_name}")
 
 
-
-
-runtime.set_cfg("Monkey F",1)
-make_semedo_figure(1,2,analysis_type="baseline100",k_subsets=10)
