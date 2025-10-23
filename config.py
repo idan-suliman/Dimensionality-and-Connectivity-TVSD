@@ -147,7 +147,8 @@ class CONFIG:
         region_id: int,
         analysis_type: str = "window",
         trials: list[dict] | None = None,
-        rois: np.ndarray | None = None,
+        rois: np.ndarray | Sequence[int] | None = None,
+        electrode_indices: np.ndarray | Sequence[int] | None = None,
         stimulus_key: str = "stimulus_id",
         return_stimulus_ids: bool = False,
         residual_reference_trials: list[dict] | None = None,
@@ -168,9 +169,11 @@ class CONFIG:
             Optional explicit list of trial dictionaries. Falls back to the
             cached trials loaded via `_load_trials()` when omitted.
         electrode_indices:
-            Optional array of electrode indices in physical ordering. When not
-            provided the electrodes belonging to `region_id` are selected from
-            the ROI vector.
+            Deprecated alias for ``rois`` kept for backward compatibility.
+        rois:
+        Optional sequence of electrode indices in physical ordering. When
+        not provided the electrodes belonging to `region_id` are selected
+        from the ROI vector.
         stimulus_key:
             Trial dict key that identifies the stimulus. Required when
             `analysis_type == "residual"` or when `return_stimulus_ids` is True.
@@ -198,7 +201,12 @@ class CONFIG:
             raise ValueError("No trials available to build the matrix.")
 
         # Determine electrodes for the requested region when not explicitly provided.
-        if rois is None:
+        if rois is not None and electrode_indices is not None:
+            raise ValueError("Specify only one of 'rois' or 'electrode_indices'.")
+
+        if electrode_indices is not None:
+            rois = np.asarray(electrode_indices, dtype=int)
+        elif rois is None:
             rois = self.get_rois()
             rois = np.flatnonzero(rois == int(region_id))
         else:
