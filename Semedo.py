@@ -15,7 +15,7 @@ def make_semedo_figure(
     d_max: int = 35,
     alpha: float | None = None,
     outer_splits: int = 2,
-    inner_splits: int = 2,
+    inner_splits: int = 3,
     random_state: int = 0,
     k_subsets: int | None = None,    # None → repetitions; int → K random subsets (used for panel D only)
 ):
@@ -162,7 +162,7 @@ def make_semedo_figure(
     # =============================== Create Figure Layout ===============================
     fig = plt.figure(figsize=(12.6, 8.2), dpi=400)
     fig.subplots_adjust(left=0.12, right=0.985, top=0.90, bottom=0.12,
-                        wspace=0.32, hspace=0.30)
+                        wspace=0.26, hspace=0.30)
 
     gs  = gridspec.GridSpec(2, 2, width_ratios=[3.2, 2.6])
     axA = fig.add_subplot(gs[0, 0])
@@ -195,7 +195,7 @@ def make_semedo_figure(
 
     axA.set_title(f"Predicting {tgt}", color=colA, pad=10, fontsize=15)
     axA.grid(alpha=.25)
-    axA.text(-0.07, 1.01, "A", transform=axA.transAxes,
+    axA.text(-0.12, 1.05, "A", transform=axA.transAxes,
              ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
 
     # =============================== Panel B (Matched subset RRR curve) ===============================
@@ -212,7 +212,7 @@ def make_semedo_figure(
     axB.set_xlabel("Predictive dimensions (d)", fontsize=label_fs, labelpad=16)
     axB.set_title(f"Predicting V1-match {tgt}", color=colB, pad=10, fontsize=15)
     axB.grid(alpha=.25)
-    axB.text(-0.07, 1.01, "B", transform=axB.transAxes,
+    axB.text(-0.12, 1.05, "B", transform=axB.transAxes,
              ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
 
     # =============================== Panel C (Global comparison: A vs B) ===============================
@@ -231,8 +231,11 @@ def make_semedo_figure(
         axC.scatter([jitter_x], [jitter_y], s=175, facecolors="white", edgecolors="black", zorder=4)
     axC.set_xlim(xmin, xmax)
     axC.set_ylim(xmin, xmax)
+    ticks_c = np.arange(xmin, xmax + 1, max(1, int(np.ceil((xmax - xmin) / 6))))
+    axC.set_xticks(ticks_c)
+    axC.set_yticks(ticks_c)
     axC.grid(False)
-    axC.text(-0.07, 1.01, "C", transform=axC.transAxes,
+    axC.text(-0.12, 1.05, "C", transform=axC.transAxes,
              ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
 
     # =============================== Panel D (Per-group subsets) ===============================
@@ -247,9 +250,12 @@ def make_semedo_figure(
     axD.plot([xmin_d, xmax_d], [xmin_d, xmax_d], ls="--", lw=0.9, color="k")
     axD.set_xlim(xmin_d, xmax_d)
     axD.set_ylim(xmin_d, xmax_d)
+    ticks_d = np.arange(xmin_d, xmax_d + 1, max(1, int(np.ceil((xmax_d - xmin_d) / 6))))
+    axD.set_xticks(ticks_d)
+    axD.set_yticks(ticks_d)
     axD.text(0.98, 0.02, label_D, transform=axD.transAxes, ha="right", va="bottom", fontsize=11)
     axD.grid(False)
-    axD.text(-0.07, 1.01, "D", transform=axD.transAxes,
+    axD.text(-0.12, 1.05, "D", transform=axD.transAxes,
              ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
 
     # =============================== Shared axis labels ===============================
