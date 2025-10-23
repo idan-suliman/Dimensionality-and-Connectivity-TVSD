@@ -359,23 +359,15 @@ class RRR_Centered_matching:
         src_name = runtime._consts.REGION_ID_TO_NAME[src_region]
         tgt_name = runtime._consts.REGION_ID_TO_NAME[tgt_region]
 
-        # ---------- helpers -------------------------------------------------
-        def slc(reg):
-            return slice(0, 100) if analysis_type == "baseline100" \
-                else slice(*runtime.get_consts().REGION_WINDOWS[reg])
-
+        
         def build(reg_id, idx):
-            mat, stim = [], []
-            w = slc(reg_id)
-            for tr in trials:
-                mat.append(tr["mua"][w][:, idx].mean(0))
-                stim.append(tr["stimulus_id"])
-            M = np.stack(mat, dtype=np.float32)
-            if analysis_type == "residual":
-                for s in np.unique(stim):
-                    msk = np.asarray(stim) == s
-                    M[msk] -= M[msk].mean(0, keepdims=True)
-            return M
+            return runtime.get_cfg().build_trial_matrix(
+                region_id=reg_id,
+                analysis_type=analysis_type,
+                trials=trials,
+                electrode_indices=idx,
+                residual_reference_trials=trials if analysis_type == "residual" else None,
+            )
 
         # ---------- full index vectors -------------------------------------
         src_idx_full = np.where(rois == src_region)[0]
