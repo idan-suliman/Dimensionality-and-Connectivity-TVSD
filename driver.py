@@ -1,5 +1,5 @@
 from runtime import runtime
-from databuilder import DataBuilder
-from Generalplots import Plots
+import constants
 
-#runtime.set_cfg(monkey_name=constants.MONKEY_N, z_score_index=4)
+
+runtime.set_cfg(monkey_name=constants.MONKEY_N, z_score_index=4)
