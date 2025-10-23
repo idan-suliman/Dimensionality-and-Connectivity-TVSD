@@ -1,5 +1,6 @@
 /__ pycache__/
 *.png
+/core/
 
 cca.py
 pca.py
