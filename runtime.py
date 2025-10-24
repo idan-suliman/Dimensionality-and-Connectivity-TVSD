@@ -1,5 +1,5 @@
 from config import CONFIG
-import constants
+import  constants
 
 class RUNTIME:
     def __init__(self):
