@@ -25,13 +25,6 @@ class RRR_Centered_matching:
     alpha             : float – fixed λ;  if None → inner-CV picks λ per fold
     """
 
-    def __init__(self, analysis_types = runtime.get_consts().ANALYSIS_TYPES):
-        self.analysis_types = analysis_types
-
-    
-    def run(self):
-        pass
-
     # ------------------------------ plot-dir -------------
     @staticmethod
     def _plot_dir(match_to_target: bool = True) -> Path:
@@ -165,79 +158,6 @@ class RRR_Centered_matching:
         plt.close(fig)
         print(f"[✓] RRR figure saved → {fname}")
 
-
-    #  DEBUG: Ridge-R² per repetition
-    def debug_ridge_r2_by_repetition(
-        source_region: int = 1,       # V1
-        target_region: int = 3,       # IT   (OR 2 = V4)
-        *,
-        analysis_type: str = "residual",
-        d_max: int = 35,
-        outer_splits: int = 2,
-        inner_splits: int = 2,
-        random_state: int = 0,
-    ):
-        # ----- ensure rep_idx exists -----------------------------------
-        trials = runtime.get_cfg()._load_trials()
-        if "rep_idx" not in trials[0]:
-            for tr in trials:
-                tr["rep_idx"] = int(tr["allmat_row"][3]) - 1   # 1…30 → 0…29
-
-        rep_ids = np.unique([tr["rep_idx"] for tr in trials])
-        print(f"\nDetected repetitions: {rep_ids}")
-
-        # ----- prepare indices & match subset --------------------------
-        rois = runtime.get_cfg().get_rois()
-        src_idx_full = np.where(rois == source_region)[0]
-        tgt_idx_full = np.where(rois == target_region)[0]
-
-        match_path = (runtime.get_cfg().get_data_path() / "TARGET_RRR" / analysis_type.upper() /
-                    f"V1_to_{runtime.get_consts().REGION_ID_TO_NAME[target_region]}_{analysis_type}.npz")
-        if not match_path.exists():
-            MATCHINGSUBSET.match_and_save(
-                "V1", runtime.get_consts().REGION_ID_TO_NAME[target_region],
-                stat_mode=analysis_type, show_plot=False, verbose=False)
-        match_idx = np.load(match_path)["phys_idx"]
-
-        # small CV
-        outer_small = max(2, min(outer_splits, 5))
-        inner_small = max(2, min(inner_splits, 3))
-
-        def _win(r):  # time window
-            return slice(0, 100) if analysis_type == "baseline100" \
-                else slice(*runtime.get_consts.REGION_WINDOWS[r])
-
-        print("\nrep | Ridge_R²(full) | Ridge_R²(match)")
-        print("-----------------------------------------")
-        for rep in rep_ids:
-            sub = [tr for tr in trials if tr["rep_idx"] == rep]
-
-            def mat(rid, idx):
-                M = np.stack([tr["mua"][_win(rid)][:, idx].mean(0) for tr in sub],
-                            dtype=np.float32)
-                if analysis_type == "residual":
-                    M -= M.mean(0, keepdims=True)
-                return M
-
-            # full
-            Yf, Xf = mat(target_region, tgt_idx_full), mat(1, src_idx_full)
-            res_f  = RRR_Centered_matching._performance_from_mats(
-                Yf, Xf, d_max=d_max, alpha=None,
-                outer_splits=outer_small, inner_splits=inner_small,
-                random_state=random_state)
-            ridge_full = res_f["ridge_R2_mean"]
-
-            # match
-            Ym = mat(1, match_idx)
-            Xm = mat(1, src_idx_full[~np.isin(src_idx_full, match_idx)])
-            res_m = RRR_Centered_matching._performance_from_mats(
-                Ym, Xm, d_max=d_max, alpha=None,
-                outer_splits=outer_small, inner_splits=inner_small,
-                random_state=random_state)
-            ridge_match = res_m["ridge_R2_mean"]
-
-            print(f"{rep:2d}  |   {ridge_full:6.3f}      |   {ridge_match:6.3f}")
-
     # ----------------------- PUBLIC: numeric performance -
     def performance(source_region: int, target_region: int,
                     *, d_max: int = 30, alpha: float | None = None,
@@ -359,14 +279,13 @@ class RRR_Centered_matching:
         src_name = runtime._consts.REGION_ID_TO_NAME[src_region]
         tgt_name = runtime._consts.REGION_ID_TO_NAME[tgt_region]
 
-        
         def build(reg_id, idx):
             return runtime.get_cfg().build_trial_matrix(
                 region_id=reg_id,
                 analysis_type=analysis_type,
-                trials=trials,
-                electrode_indices=idx,
-                residual_reference_trials=trials if analysis_type == "residual" else None,
+                trials=None,                                   # <-- חשוב: לא להעביר רשימת dictים
+                electrode_indices=np.asarray(idx, dtype=int), #     עובדים על כל הטריילים
+                return_stimulus_ids=False
             )
 
         # ---------- full index vectors -------------------------------------
@@ -439,4 +358,6 @@ class RRR_Centered_matching:
     def _lambda_for_fname(val: float) -> str:
         s = f"{val:.1e}".replace("+", "")
         return s.replace(".", "p")
+
+
 
