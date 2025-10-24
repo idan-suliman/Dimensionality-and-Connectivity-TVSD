@@ -12,27 +12,25 @@ class MATCHINGSUBSET:
     # ------------------------ helper: build matrix ------------------------
     def _compute_matrix(region: str, stat: str,
                         day_filter: list[int] | None = None):
-        rid  = runtime.get_consts().REGION_NAME_TO_ID[region]
-        idx  = np.where(runtime.get_cfg().get_rois() == rid)[0]
-        win  = slice(0, 100) if stat == "baseline100" \
-            else slice(*runtime.get_consts().REGION_WINDOWS[rid])
+        consts = runtime.get_consts()
+        cfg    = runtime.get_cfg()
 
-        X, stim = [], []
-        for tr in runtime.get_cfg()._load_trials():
-            if day_filter and tr["day_id"] not in day_filter:
-                continue
-            X.append(tr["mua"][win][:, idx].mean(0))
-            stim.append(tr["stimulus_id"])
-        X = np.stack(X, dtype=np.float32)
+        rid  = consts.REGION_NAME_TO_ID[region]
+        idx  = np.flatnonzero(cfg.get_rois() == rid)
 
-        if stat == "residual":
-            stim      = np.asarray(stim)
-            ids, inv  = np.unique(stim, return_inverse=True)
-            mu        = np.zeros((ids.size, X.shape[1]), X.dtype)
-            for k in range(ids.size):
-                mu[k] = X[inv == k].mean(0)
-            X -= mu[inv]
+        trials = None
+        if day_filter:
+            day_filter_set = set(day_filter)
+            trials = [
+                tr for tr in cfg._load_trials()
+                if tr.get("day_id") in day_filter_set
+            ]
 
+        X = cfg.build_trial_matrix(
+            region_id=rid,
+            analysis_type=stat,
+            trials=trials,
+        )
         return X, idx
 
     def match_and_save(
