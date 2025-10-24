@@ -235,5 +235,3 @@ class CONFIG:
             return mat, (stim_ids_full[out_idx] if stim_ids_full is not None else None)
         return mat
     
-
-

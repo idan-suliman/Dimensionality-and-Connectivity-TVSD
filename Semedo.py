@@ -289,6 +289,304 @@ def make_semedo_figure(
     print(f"[✓] Semedo figure saved → {out_dir/fname}")
 
 
+
+
+
+def make_subset_semedo_figure1(
+    source_region : int = 1,      # V1
+    target_region : int = 3,      # IT (or 2 = V4)
+    *,
+    analysis_type : str  = "residual",   # "window" | "baseline100" | "residual"
+    d_max         : int  = 35,
+    alpha         : float | None = None,
+    outer_splits  : int  = 2,
+    inner_splits  : int  = 3,
+    random_state  : int  = 0,
+    # ---- subset parameters ----
+    n_run   : int = 5,
+    n_src   : int = 113,
+    n_tgt   : int = 28,
+    k_subsets : int = 10
+):
+    """
+    Subset-Semedo figure (A–D)
+    Panels:
+        A,B – RRR curves for multiple runs (one color per run)
+        C   – single dot per run (d95_match vs. d95_full)
+        D   – multiple dots per run (subset-level)
+    """
+
+    cfg     = runtime.get_cfg()
+    consts  = runtime.get_consts()
+    rng     = np.random.default_rng(random_state)
+    trials  = cfg._load_trials()  # only for length; matrices computed with indices (not dicts)
+
+    # ---------------- helpers -------------------
+    def _matrix(rid: int, elec_idx: np.ndarray | list[int] | None, trial_idx: np.ndarray | slice | None):
+        """Build matrix using new build_trial_matrix API: trials are indices/boolean/slice; electrodes by indices."""
+        return cfg.build_trial_matrix(
+            region_id=rid,
+            analysis_type=analysis_type,
+            trials=trial_idx,  # indices/slice/None
+            electrode_indices=(None if elec_idx is None else np.asarray(elec_idx, dtype=int)),
+            return_stimulus_ids=False
+        )
+
+    def _d95(r2_vec, ridge_val):
+        idx = np.where(r2_vec >= 0.95 * float(ridge_val))[0]
+        return int(idx[0] + 1) if idx.size else np.nan
+
+    def _labeled_dot(ax, x, y, label, *, face, edge="k",
+                     size=240, text_size=11, text_color="white"):
+        ax.scatter([x], [y], s=size, facecolors=face, edgecolors=edge,
+                   linewidths=1.5, zorder=6)
+        ax.text(x, y, str(label), ha="center", va="center",
+                color=text_color, fontsize=text_size, weight="bold",
+                zorder=8, path_effects=[pe.withStroke(linewidth=2.0, foreground="black")])
+
+    def _square_limits(x_vals, y_vals, *, base_min=1, scale=1.5):
+        xv = np.atleast_1d(x_vals).astype(float)
+        yv = np.atleast_1d(y_vals).astype(float)
+        xv = xv[np.isfinite(xv)]  # ignore NaNs
+        yv = yv[np.isfinite(yv)]
+        vmax = float(np.max([np.max(xv) if xv.size else base_min,
+                             np.max(yv) if yv.size else base_min]))
+        lim_max = int(np.ceil(scale * vmax))
+        lim_max = max(lim_max, base_min + 1)
+        return (base_min, lim_max)
+
+    # ---------------- electrode indices -------------------
+    rois = cfg.get_rois()
+    all_src_idx = np.where(rois == source_region)[0]
+    all_tgt_idx = np.where(rois == target_region)[0]
+    n_src_eff = min(n_src, all_src_idx.size)
+    n_tgt_eff = min(n_tgt, all_tgt_idx.size)
+
+    base_cols = ["#9C1C1C", "#1565C0", "#2E7D32", "#7B1FA2", "#F57C00", "#00796B"]
+    col_cycle = cycle(base_cols)
+    tgt_nm = consts.REGION_ID_TO_NAME[target_region]
+
+    # ---------------- figure layout -------------------
+    fig = plt.figure(figsize=(14, 13), dpi=400)
+    fig.subplots_adjust(left=0.10, right=0.97, top=0.90, bottom=0.12, wspace=0.15, hspace=0.30)
+    gs  = gridspec.GridSpec(2, 2)
+    axA = fig.add_subplot(gs[0, 0])
+    axB = fig.add_subplot(gs[1, 0])
+    axC = fig.add_subplot(gs[0, 1])
+    axD = fig.add_subplot(gs[1, 1])
+
+    label_fs, tick_fs = 17, 12
+    for ax in (axA, axB, axC, axD):
+        ax.tick_params(labelsize=tick_fs)
+        ax.xaxis.labelpad = 16
+        ax.yaxis.labelpad = 20
+
+    # ---------------- per-run computation -------------------
+    d95_full_runs, d95_match_runs = [], []
+    d95_full_subsets, d95_match_subsets = [], []
+    dims = np.arange(1, d_max + 1)
+
+    for run_idx in range(n_run):
+        col = next(col_cycle)
+
+        # random electrode subsets
+        src_subset = rng.choice(all_src_idx, n_src_eff, replace=False)
+        tgt_subset = rng.choice(all_tgt_idx, n_tgt_eff, replace=False)
+
+        # pick "matched" V1 electrodes by smallest mean activity across ALL trials
+        mean_src  = _matrix(source_region, src_subset, trial_idx=None).mean(0)
+        order_src = np.argsort(mean_src)
+        match_src  = src_subset[order_src[:n_tgt_eff]]
+        src_remain = src_subset[~np.isin(src_subset, match_src)]
+
+        # FULL runs (all trials → trial_idx=None)
+        X_full = _matrix(source_region, src_subset, trial_idx=None)
+        Y_full = _matrix(target_region, tgt_subset, trial_idx=None)
+        res_full = RRR_Centered_matching._performance_from_mats(
+            Y_full, X_full, d_max=d_max, alpha=alpha,
+            outer_splits=outer_splits, inner_splits=inner_splits,
+            random_state=random_state + run_idx
+        )
+
+        # MATCH runs (all trials)
+        X_match = _matrix(source_region, src_remain, trial_idx=None)
+        Y_match = _matrix(source_region, match_src,  trial_idx=None)
+        res_match = RRR_Centered_matching._performance_from_mats(
+            Y_match, X_match, d_max=d_max, alpha=alpha,
+            outer_splits=outer_splits, inner_splits=inner_splits,
+            random_state=random_state + run_idx
+        )
+
+        # ---- Plot Panels A + B ----
+        axA.errorbar(dims, res_full["rrr_R2_mean"], yerr=res_full["rrr_R2_sem"],
+                     fmt="o-", ms=3.8, lw=1.35, capsize=3, color=col)
+        axA.scatter([1], [res_full["ridge_R2_mean"]],
+                    marker="^", s=90, color=col, edgecolors="k")
+        axA.set_box_aspect(1)
+
+        axB.errorbar(dims, res_match["rrr_R2_mean"], yerr=res_match["rrr_R2_sem"],
+                     fmt="o-", ms=3.8, lw=1.35, capsize=3, color=col)
+        axB.scatter([1], [res_match["ridge_R2_mean"]],
+                    marker="^", s=90, color=col, edgecolors="k")
+        axB.set_box_aspect(1)
+
+        # ---- Global d95 values ----
+        d95_f = _d95(res_full["rrr_R2_mean"],  res_full["ridge_R2_mean"])
+        d95_m = _d95(res_match["rrr_R2_mean"], res_match["ridge_R2_mean"])
+        d95_full_runs.append(d95_f)
+        d95_match_runs.append(d95_m)
+
+        if np.isfinite(d95_f):
+            r2d = res_full["rrr_R2_mean"][d95_f - 1]
+            _labeled_dot(axA, d95_f, r2d, int(d95_f), face=col)
+        if np.isfinite(d95_m):
+            r2d = res_match["rrr_R2_mean"][d95_m - 1]
+            _labeled_dot(axB, d95_m, r2d, int(d95_m), face=col)
+
+        # ---- build k_subsets points: split TRIAL INDICES (not dicts) ----
+        idx_trials = rng.permutation(len(trials))
+        chunks = np.array_split(idx_trials, k_subsets)
+
+        for ch_idx in chunks:
+            # subset by trial indices
+            res_f_sub = RRR_Centered_matching._performance_from_mats(
+                _matrix(target_region,  tgt_subset, ch_idx),
+                _matrix(source_region, src_subset, ch_idx),
+                d_max=d_max, alpha=alpha,
+                outer_splits=max(2, outer_splits),
+                inner_splits=max(2, inner_splits),
+                random_state=random_state + run_idx
+            )
+            res_m_sub = RRR_Centered_matching._performance_from_mats(
+                _matrix(source_region, match_src,  ch_idx),
+                _matrix(source_region, src_remain, ch_idx),
+                d_max=d_max, alpha=alpha,
+                outer_splits=max(2, outer_splits),
+                inner_splits=max(2, inner_splits),
+                random_state=random_state + run_idx
+            )
+            d95_f_sub = _d95(res_f_sub["rrr_R2_mean"],  res_f_sub["ridge_R2_mean"])
+            d95_m_sub = _d95(res_m_sub["rrr_R2_mean"], res_m_sub["ridge_R2_mean"])
+            d95_full_subsets.append((run_idx, d95_f_sub))
+            d95_match_subsets.append((run_idx, d95_m_sub))
+
+    # ---------------- Panels C + D -------------------
+    valid_x = [int(x) for x in d95_match_runs if np.isfinite(x)]
+    valid_y = [int(y) for y in d95_full_runs  if np.isfinite(y)]
+    xmin, xmax = _square_limits(valid_x + [1], valid_y + [1])
+
+    rng_jitter   = np.random.default_rng(random_state)
+    jitter_scale = 0.15
+
+    # Panel C – נקודה אחת לכל ריצה
+    for run_idx, (xf, yf) in enumerate(zip(d95_match_runs, d95_full_runs)):
+        if not (np.isfinite(xf) and np.isfinite(yf)):
+            continue
+        col = base_cols[run_idx % len(base_cols)]
+        xj  = xf + rng_jitter.uniform(-jitter_scale, jitter_scale)
+        yj  = yf + rng_jitter.uniform(-jitter_scale, jitter_scale)
+        axC.scatter(xj, yj, s=100, facecolors="white", edgecolors=col,
+                    linewidth=1.5, zorder=5)
+
+    axC.plot([xmin, xmax], [xmin, xmax], ls="--", lw=0.9, color="k")
+    axC.set_xlim(xmin, xmax)
+    axC.set_ylim(xmin, xmax)
+    axC.grid(False)
+    axC.set_box_aspect(1)
+
+    # Panel D – מספר נקודות (subsets) לכל ריצה
+    for (run_idx, yf), (_, xf) in zip(d95_full_subsets, d95_match_subsets):
+        if not (np.isfinite(xf) and np.isfinite(yf)):
+            continue
+        col = base_cols[run_idx % len(base_cols)]
+        xj  = xf + rng_jitter.uniform(-jitter_scale, jitter_scale)
+        yj  = yf + rng_jitter.uniform(-jitter_scale, jitter_scale)
+        axD.scatter(xj, yj, s=55, facecolors="white", edgecolors=col,
+                    linewidth=1.2)
+
+    axD.plot([xmin, xmax], [xmin, xmax], ls="--", lw=0.9, color="k")
+    axD.set_xlim(xmin, xmax)
+    axD.set_ylim(xmin, xmax)
+    axD.grid(False)
+    axD.set_box_aspect(1)
+
+    # ---- Legend (only in Panel D) ----
+    handles = [plt.Line2D([0], [0], marker='o', color='none',
+                          markerfacecolor='white',
+                          markeredgecolor=c, markersize=8, lw=0)
+               for c in base_cols[:n_run]]
+    labels  = [f"Run {i+1}" for i in range(n_run)]
+    axD.legend(handles, labels,
+               loc="lower right",
+               fontsize=9,
+               frameon=False,
+               title="Runs",
+               title_fontsize=10)
+
+    # ---------------- Cosmetics -------------------
+    axA.set_title(f"Predicting {tgt_nm}", color="#9C1C1C", pad=10, fontsize=15)
+    axB.set_title(f"Predicting V1-match {tgt_nm}", color="#1565C0", pad=10, fontsize=15)
+    for ax in (axA, axB):
+        ax.grid(alpha=.25)
+
+    for label, ax in zip("ABCD", (axA, axB, axC, axD)):
+        ax.text(-0.07, 1.05, label, transform=ax.transAxes,
+                ha="left", va="bottom", fontsize=20, fontweight="bold", color="black")
+
+    # shared axis labels
+    for ax in (axA, axB, axC, axD):
+        ax.set_ylabel(None)
+
+    boxA, boxB, boxC, boxD = axA.get_position(), axB.get_position(), axC.get_position(), axD.get_position()
+    left_col_ycenter  = 0.5 * (((boxA.y0 + boxA.y1) / 2) + ((boxB.y0 + boxB.y1) / 2))
+    right_block_ycent = 0.5 * (((boxC.y0 + boxC.y1) / 2) + ((boxD.y0 + boxD.y1) / 2))
+    left_ylabel_x     = boxA.x0 - 0.066
+    right_ylabel_x    = boxC.x0 - 0.043
+    right_xlabel_y    = min(boxC.y0, boxD.y0) - 0.058
+    left_xlabel_y     = min(boxA.y0, boxB.y0) - 0.058
+    left_block_xcent  = 0.5 * (((boxA.x0 + boxA.x1) / 2) + ((boxB.x0 + boxB.y1) / 2))
+    right_block_xcent = 0.5 * (((boxC.x0 + boxC.x1) / 2) + ((boxD.x0 + boxD.x1) / 2))
+
+    fig.text(left_ylabel_x, left_col_ycenter,
+             rf"Mean $R^2$  (outer {outer_splits}, inner {inner_splits})",
+             va="center", ha="right", rotation="vertical", fontsize=label_fs+1, color="black")
+    fig.text(right_ylabel_x, right_block_ycent,
+             f"{tgt_nm} Predictive dimensions",
+             va="center", ha="right", rotation="vertical", fontsize=label_fs+1, color="#9C1C1C")
+
+    fig.text(left_block_xcent, left_xlabel_y,
+             "Predictive dimensions (d)",
+             va="top", ha="center", fontsize=label_fs+1, color="black")
+
+    fig.text(right_block_xcent, right_xlabel_y,
+             "Target V1 Predictive dimensions",
+             va="top", ha="center", fontsize=label_fs+1, color="#1565C0")
+
+    # global title
+    fig.suptitle(
+        f"{cfg.get_monkey_name()}  |  {cfg.get_zscore_title()}  |  "
+        f"{analysis_type.upper()}  (n_src={n_src_eff}, n_tgt={n_tgt_eff}, runs={n_run})",
+        fontsize=16, y=.995, fontweight="bold"
+    )
+
+    # ---------------- save -------------------
+    out_dir = cfg.get_data_path() / "Semedo_plots" / f"{n_run}_multisubset" / analysis_type
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tgt_tag  = consts.REGION_ID_TO_NAME[target_region]
+    file_name = (
+        f"{cfg.get_monkey_name()} "
+        f"({n_src_eff},{n_tgt_eff}) "
+        f"{analysis_type.upper()} "
+        f"({tgt_tag}).png"
+    ).replace(" ", "_")
+
+    fig.savefig(out_dir / file_name, dpi=400, facecolor="white")
+    plt.close(fig)
+    print(f"[✓] Subset-Semedo figure saved → {out_dir / file_name}")
+
+
+
+
 def make_subset_semedo_figure(
     source_region : int = 1,      # V1
     target_region : int = 3,      # IT (or 2 = V4)
@@ -580,5 +878,44 @@ def make_subset_semedo_figure(
     fig.savefig(out_dir / file_name, dpi=400, facecolor="white")
     plt.close(fig)
     print(f"[✓] Subset-Semedo figure saved → {out_dir / file_name}")
+
+
+
+
+
+"""
+runtime.set_cfg("Monkey N", 1)
+make_semedo_figure(
+                            1,
+                            3,
+                            analysis_type="residual",
+                            k_subsets=10,
+                        )
+"""
+
+monkeys = ["Monkey N", "Monkey F"]
+zscore_codes = [1, 2, 3, 4]
+methods = ["window", "baseline100", "residual"]
+targets = [2, 3]
+for monkey in monkeys:
+        for zc in zscore_codes:
+            runtime.set_cfg(monkey, zc)
+            consts = runtime.get_consts()
+            region_name = consts.REGION_ID_TO_NAME
+
+            print(f"\n[CFG] {monkey} | Z={zc} | Z-Title='{runtime.get_cfg().get_zscore_title()}'")
+
+            for method in methods:
+                for tgt in targets:
+                        print(f"  → Running: {monkey}, Z={zc}, method='{method}', {region_name[1]}→{region_name[tgt]}, k_subsets={10}")
+                        make_subset_semedo_figure(
+                            1,
+                            tgt,
+                            analysis_type=method,
+                            k_subsets=10,
+                        )
+
+
+
 
 
