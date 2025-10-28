@@ -1,3 +1,4 @@
+# Generalplots.py
 from runtime import runtime
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt

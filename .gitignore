@@ -1,10 +1,11 @@
 /__ pycache__/
-*.png
 /core/
-
 cca.py
 pca.py
 GeneralFunctions.py
 temp2.py
 temp.py
 temp3.py
+temp6.py
+temp5.py
+name.txt
