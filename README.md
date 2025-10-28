@@ -7,7 +7,7 @@
 **Advisor:** Dr. Zvi Roth  
 **Contact:** Idansu123456@gmail.com
 
-<img width="453" height="169" alt="image" src="https://github.com/user-attachments/assets/a9d95a71-9d7f-4318-9600-d70f6bfb84ba" />
+![](images_for_readme/university_symbol.png)
 
 ---
 
@@ -55,9 +55,9 @@ TVSD_CODE/
    └─ figures/              # README/slide assets (logo, connectivity, etc.)
 ```
 
-<img width="1376" height="510" alt="image" src="https://github.com/user-attachments/assets/3d7f227b-054b-46b6-a930-e0d65d626f5e" />
+![Architecture](images_for_readme/packages_TVSD_CODE.png)
 
-<img width="2413" height="484" alt="image" src="https://github.com/user-attachments/assets/03d0b677-665d-4ff6-9231-b5b374166315" />
+![Module Overview](images_for_readme/classes_TVSD_CODE.png)
 
 
 
@@ -104,8 +104,7 @@ To convert: `logical_rois = physical_rois[mapping]`.
 QC revealed a **continuous block of 64 non-functional electrodes** at **logical indices 256–319 (inclusive)** — i.e., **after applying the physical→logical mapping**.  
 Per-electrode statistics showed **near-zero STD across trials**, indicating no meaningful neural signal.
 
-<img width="1485" height="608" alt="image" src="https://github.com/user-attachments/assets/23be8bc0-e1bd-4217-b1ed-a0dd82c8e3ff" />
-
+![Electrode STD](images_for_readme/removing_bad_electrodes.png)
 
 
 **Action taken**

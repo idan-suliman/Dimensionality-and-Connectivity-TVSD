@@ -139,8 +139,6 @@ class CONFIG:
             raise RuntimeError("Trials cache empty – run TVSDAnalysis.load_trials()")
         return trials
 
-
-
     def build_trial_matrix(
     self,
     *,
