@@ -145,11 +145,11 @@ Create a clean Python environment and install dependencies:
 
 ```bash
 python -m venv .venv
-```
-# activate:
+
+# Activate:
 #   Windows (PowerShell): .\.venv\Scripts\Activate.ps1
 #   Windows (cmd):        .\.venv\Scripts\activate.bat
 #   macOS/Linux:          source .venv/bin/activate
-```bash
+
 pip install -r requirements.txt
 ```
