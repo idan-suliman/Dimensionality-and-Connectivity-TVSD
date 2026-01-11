@@ -598,7 +598,6 @@ def build_figure_4_subset(
     )
 
 
-
 def build_semedo_figure_5_b(
     *,
     analysis_type: str = "residual",

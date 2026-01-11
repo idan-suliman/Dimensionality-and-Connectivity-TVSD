@@ -52,14 +52,9 @@ TVSD_CODE/
 │  ├─ visualization.py      # Plotting and figure generation (includes SemedoFigures)
 │  └─ dimensionality_correlation.py # Analysis of stability vs dimensionality
 │
-├─ drivers/                 # Entry points for running analyses
-│  ├─ driver.py             # Main driver for Repetition Stability Analysis
-│  └─ driver_semedo.py       # Driver for Semedo replication figures (Fig 4, 5B)
-│
-├─ data/                    # Raw & processed (git-ignored)
-├─ outputs/                 # Figures, tables, logs
-└─ docs/
-   └─ figures/              # README/slide assets (logo, connectivity, etc.)
+└─ drivers/                 # Entry points for running analyses
+   ├─ driver.py             # Main driver for Repetition Stability Analysis
+   └─ driver_semedo.py       # Driver for Semedo replication figures (Fig 4, 5B)
 ```
 
 ![Architecture](images_for_readme/packages_TVSD_CODE.png)
