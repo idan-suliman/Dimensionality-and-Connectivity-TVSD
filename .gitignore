@@ -1,2 +1,7 @@
-/__ pycache__/
-/NOT_FOR_GIT
+__pycache__/
+*.pyc
+NOT_FOR_GIT/
+data/
+outputs/
+.venv/
+.env
