@@ -1,10 +1,8 @@
 __pycache__/
 *.pyc
 NOT_FOR_GIT/
-data/
-!data/*.py
 outputs/
 .venv/
 .env
-update_cache.py
-run_dim_correlation.py
+drivers/update_cache.py
+drivers/run_dim_correlation.py
