@@ -92,14 +92,20 @@ python drivers/run_dim_correlation.py
    Keep **test set only** (100 images × 30 reps), group by `stimulus_id` →  
    `Processed_by_trial/Day_XX/<Region>/stimulus_YYY.npz` with arrays `(300, num_trials, num_neurons)`.
 
-3) **Step C — Time-window average & Z-score**  
-   Region windows: **V1: 25–125 ms, V4: 50–150 ms, IT: 75–175 ms**.  
-   Average over time ⇒ response per trial; **Z-score per neuron** across that stimulus’ reps.  
-   Save `(num_trials, num_neurons)` in `Normalized_by_trial/...`.
+3) **Step C — Response Extraction & Normalization**  
+   Trials consist of 300 ms recordings (100 ms pre-stimulus + 200 ms evoked). We reduce the time-series to a single scalar per trial using three methods:
+   - **Evoked Window**: Mean activity within latency windows (**V1**: 126-225 ms; **V4**: 151–250 ms; **IT**: 176-275 ms).
+   - **Baseline**: Mean activity during the 1-100 ms pre-stimulus period.
+   - **Residual**: The Evoked Window value minus the image-specific mean response, isolating trial-by-trial fluctuations.
 
-4) **Step D — Residuals (trial-centered)**  
-   Subtract each neuron’s **mean over repetitions** of the same stimulus ⇒ residuals per trial.  
-   Save `(num_trials, num_neurons)` in `Residual_by_trial/...`.
+   **Normalization**: Neural responses are standardized ($Z_{ij} = (X_{ij} - \mu) / \sigma$) using four schemes:
+   - **Per-day**: Computed independently within each recording day (robust to day-to-day offsets).
+   - **Global**: Computed over the full dataset (robust to overall gain differences).
+   - **Repetition-wise**: Computed locally within each repetition (robust to slow trends).
+   - **Raw**: Retained as an unnormalized control.
+
+4) **Step D — Matrix Formation**  
+   After each preprocessing variant, electrodes from the same region are stacked into a **trial × electrode matrix X** (rows = trials, columns = electrodes), which is used throughout downstream analyses (Dimensionality, RRR).
 
 These outputs feed **dimensionality (PCA/SVD)** and **RRR** (e.g., **V1→V4**, **V1→IT**) including **V1-MATCH** variants.
 
