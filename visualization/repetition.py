@@ -6,7 +6,7 @@ from matplotlib.ticker import MaxNLocator
 from scipy.stats import spearmanr
 from pathlib import Path
 from core.runtime import runtime
-from ..repetition_stability.utils import extract_lag_data
+from methods.repetition_stability.utils import extract_lag_data
 
 def plot_repetition_stability(
     results: list[dict],

@@ -4,7 +4,7 @@ from pathlib import Path
 import csv
 from core.runtime import runtime
 from ..rrr import RRRAnalyzer
-from ..visualization import SemedoFigures, d95_from_curves
+from visualization import SemedoFigures, d95_from_curves
 from ..pca import RegionPCA
 from .utils import build_trial_matrix
 

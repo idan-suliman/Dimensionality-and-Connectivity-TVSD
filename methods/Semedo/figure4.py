@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np 
 from core.runtime import runtime
 from ..rrr import RRRAnalyzer
-from ..visualization import SemedoFigures, d95_from_curves
+from visualization import SemedoFigures, d95_from_curves
 from .utils import build_groups_by_rep_or_subsets, build_trial_matrix
 
 def build_figure_4(

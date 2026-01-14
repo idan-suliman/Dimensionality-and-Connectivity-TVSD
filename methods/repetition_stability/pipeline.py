@@ -19,7 +19,7 @@ def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool
     # However, if we assume the old visualization.py is still there (it is), it's fine. 
     # But wait, we plan to refactor visualization too. 
     # Ideally, we should import from the new structure if possible, or keep it dynamic.
-    from ..visualization import plot_repetition_stability
+    from visualization import plot_repetition_stability
 
     # 1. Output Directories
     base_data_path = runtime.get_cfg().get_data_path()

@@ -78,15 +78,34 @@ This document outlines the structure of the refactored TVSD codebase. The system
 *   **Key Components**:
     *   `RegionPCA` class: `fit(X)`, `get_n_components(variance_threshold)`.
 
-### `methods.visualization`
-*   **Purpose**: Central repository for plotting functions.
-*   **Key Components**:
-    *   `plot_figure_4`, `plot_figure_5_b_from_csv`.
-    *   General plotting helpers.
-
 ---
+ 
+ ## 4. `visualization/` Package (Plotting)
+ *Central repository for all plotting and figure generation code.*
+ 
 
-## 4. `drivers/` Package (Execution)
+ 
+ ### `visualization.semedo`
+ *   **Purpose**: Figures from Semedo et al. (Figure 4, 5B).
+ 
+ ### `visualization.repetition`
+ *   **Purpose**: Repetition stability plots.
+ 
+ ### `visualization.rrr`
+ *   **Purpose**: RRR vs Ridge performance comparison plots.
+ 
+ ### `visualization.dim_corr`
+ *   **Purpose**: Dimensionality vs Stability correlation plots.
+ 
+ ### `visualization.general`
+ *   **Purpose**: General-purpose plotting utilities (histograms, rasters, etc.).
+ 
+ ### `visualization.utils`
+ *   **Purpose**: Shared plotting helpers (e.g., `jitter`, `smart_label`).
+ 
+ ---
+ 
+ ## 5. `drivers/` Package (Execution)
 *Scripts to launch analyses.*
 
 ### `drivers.driver`
@@ -95,11 +114,11 @@ This document outlines the structure of the refactored TVSD codebase. The system
 
 ---
 
-## 5. Summary of Execution Flow
+## 6. Summary of Execution Flow
 
 1.  **Driver** (`drivers/driver.py`) is executed.
 2.  It initializes **Runtime** (`core.runtime`) with specific Monkey/Z-Score settings.
 3.  It invokes an **Analyzer** (e.g., from `methods.repetition_stability`).
 4.  The Analyzer requests data from **DataManager** (`data.data_manager`).
 5.  **DataManager** loads or builds data using **DataBuilder** (`data.databuilder`).
-6.  The Analyzer performs computations (RRR, PCA) and results are passed to **Visualization** (`methods.visualization`) or saved to disk.
+6.  The Analyzer performs computations (RRR, PCA) and results are passed to **Visualization** (`visualization`) or saved to disk.

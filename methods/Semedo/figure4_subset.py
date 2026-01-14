@@ -4,7 +4,7 @@ from core.runtime import runtime
 from datetime import datetime
 import time
 from ..rrr import RRRAnalyzer
-from ..visualization import SemedoFigures, d95_from_curves
+from visualization import SemedoFigures, d95_from_curves
 from .utils import build_trial_matrix
 from .matching import match_subset_from_prebuilt
 

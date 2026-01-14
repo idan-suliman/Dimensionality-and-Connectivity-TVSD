@@ -48,9 +48,16 @@ TVSD_CODE/
 │  ├─ repetition_stability/     # Subspace stability analysis
 │  ├─ rrr/                      # Reduced Rank Regression logic
 │  ├─ Semedo/                   # Semedo 2019 replication logic
-│  ├─ visualization/            # Plotting & Figures
 │  ├─ matchingSubset.py         # V1-MATCH subset selection
 │  └─ pca.py                    # PCA utilities
+│
+├─ visualization/               # Plotting & Figures
+│  ├─ semedo.py                 # Figure 4/5 plots
+│  ├─ repetition.py             # Repetition stability plots
+│  ├─ rrr.py                    # RRR/Ridge comparison plots
+│  ├─ dim_corr.py               # Dimensionality correlation plots
+│  ├─ general.py                # General purpose plotting utilities
+│  └─ utils.py                  # Shared visualization helpers
 │
 └─ drivers/                     # Execution Drivers
    └─ driver.py                 # Main Repetition Stability Analysis

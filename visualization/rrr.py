@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import matplotlib.patheffects as pe
 from core.runtime import runtime
-from ..rrr import RRRAnalyzer
+from methods.rrr import RRRAnalyzer
 
 def plot_rrr_ridge_comparison(
     source_region: int = 1,

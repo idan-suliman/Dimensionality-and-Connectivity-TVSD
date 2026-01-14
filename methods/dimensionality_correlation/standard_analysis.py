@@ -3,7 +3,7 @@ from typing import List, Optional
 import matplotlib.pyplot as plt
 from core.runtime import runtime
 from .analyzer import DimCorrAnalyzer
-from ..visualization import DimCorrVisualizer
+from visualization import DimCorrVisualizer
 
 def run_standard_analysis(monkey: str, z_code: int, analysis_type: str, group_size: int = 3, force_recompute: bool = False, selection: List[int] | None = None):
     """
