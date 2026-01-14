@@ -7,7 +7,9 @@
 **Advisor:** Dr. Zvi Roth  
 **Contact:** Idansu123456@gmail.com
 
-![](images_for_readme/university_symbol.png)
+<p align="center">
+  <img src="images_for_readme/university_symbol.png" />
+</p>
 
 ---
 
