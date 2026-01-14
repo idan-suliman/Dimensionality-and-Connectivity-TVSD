@@ -23,11 +23,11 @@ class MATCHINGSUBSET:
         if day_filter:
             day_filter_set = set(day_filter)
             trials = [
-                tr for tr in cfg._load_trials()
+                tr for tr in runtime.get_data_manager()._load_trials()
                 if tr.get("day_id") in day_filter_set
             ]
 
-        X = cfg.build_trial_matrix(
+        X = runtime.get_data_manager().build_trial_matrix(
             region_id=rid,
             analysis_type=stat,
             trials=trials,

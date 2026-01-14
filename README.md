@@ -34,52 +34,56 @@ The goal is to quantify **representational dimensionality** and **inter-areal co
 
 ```
 TVSD_CODE/
-├─ core/                    # Essential system configurations and constants
-│  ├─ config.py             # Configuration management
-│  ├─ constants.py          # Global constants, ROI IDs, region windows
-│  └─ runtime.py            # Runtime configuration and state
+├─ core/                        # Infrastructure
+│  ├─ config.py                 # Paths & Monkey configurations
+│  ├─ constants.py              # Global analysis parameters
+│  └─ runtime.py                # Global state manager
 │
-├─ data/                    # Data handling and processing
-│  ├─ data_manager.py       # Manages data loading and caching
-│  └─ databuilder.py        # Step A–D builders (by-day, by-trial, normalization)
+├─ data/                        # Data Management
+│  ├─ data_manager/             # Central data loader package
+│  └─ databuilder.py            # Preprocessing & Normalization
 │
-├─ methods/                 # Statistical methods and analysis logic
-│  ├─ rrr.py                # Reduced Rank Regression (RRR) logic
-│  ├─ repetition_stability.py # Stability analysis across repetitions
-│  ├─ matchingSubset.py     # V1-MATCH subset selection logic
-│  ├─ pca.py                # PCA utilities
-│  ├─ Semedo.py             # Semedo 2019 replication logic
-│  ├─ visualization.py      # Plotting and figure generation (includes SemedoFigures)
-│  └─ dimensionality_correlation.py # Analysis of stability vs dimensionality
+├─ methods/                     # Scientific Methods
+│  ├─ dimensionality_correlation/ # Stability vs Dimensionality
+│  ├─ repetition_stability/     # Subspace stability analysis
+│  ├─ rrr/                      # Reduced Rank Regression logic
+│  ├─ Semedo/                   # Semedo 2019 replication logic
+│  ├─ visualization/            # Plotting & Figures
+│  ├─ matchingSubset.py         # V1-MATCH subset selection
+│  └─ pca.py                    # PCA utilities
 │
-└─ drivers/                 # Entry points for running analyses
-   ├─ driver.py             # Main driver for Repetition Stability Analysis
-   └─ driver_semedo.py       # Driver for Semedo replication figures (Fig 4, 5B)
+└─ drivers/                     # Execution Drivers
+   └─ driver.py                 # Main Repetition Stability Analysis
 ```
 
 ![Architecture](images_for_readme/packages_TVSD_CODE.png)
 
+---
+
+## Setup
+
+Create a clean Python environment and install dependencies:
+
+```bash
+python -m venv .venv
+
+# Activate:
+#   Windows (PowerShell): .\.venv\Scripts\Activate.ps1
+#   Windows (cmd):        .\.venv\Scripts\activate.bat
+#   macOS/Linux:          source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+---
 
 ## How to Run
 
 Run the analysis drivers from the root directory:
 
-**Repetition Stability Analysis:**
 ```powershell
 python drivers/driver.py
 ```
-
-**Semedo Replication (Figures 4, 5B):**
-```powershell
-python drivers/driver_semedo.py
-```
-
-**Dimensionality Correlation Analysis:**
-```powershell
-python drivers/run_dim_correlation.py
-```
-
-
 
 ---
 
@@ -137,20 +141,3 @@ Per-electrode statistics showed **near-zero STD across trials**, indicating no m
 - Excluded these electrodes from analysis.  
 - Updated both **mapping logic** and **raw/processed arrays** to preserve **1:1 logical–physical structure** after removal.  
 - All downstream steps (A–D, dim/RRR) use the **filtered** set with consistent indexing.
-
----
-
-
-### Setup
-Create a clean Python environment and install dependencies:
-
-```bash
-python -m venv .venv
-
-# Activate:
-#   Windows (PowerShell): .\.venv\Scripts\Activate.ps1
-#   Windows (cmd):        .\.venv\Scripts\activate.bat
-#   macOS/Linux:          source .venv/bin/activate
-
-pip install -r requirements.txt
-```
