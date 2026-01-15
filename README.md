@@ -58,7 +58,6 @@ TVSD_CODE/
 │  ├─ repetition.py             # Repetition stability plots
 │  ├─ rrr.py                    # RRR/Ridge comparison plots
 │  ├─ dim_corr.py               # Dimensionality correlation plots
-│  ├─ general.py                # General purpose plotting utilities
 │  └─ utils.py                  # Shared visualization helpers
 │
 └─ drivers/                     # Execution Drivers
