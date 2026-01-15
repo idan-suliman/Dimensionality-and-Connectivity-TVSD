@@ -8,9 +8,9 @@ def _plot_dir(match_to_target: bool = True) -> Path:
     Return <data_path>/TARGET_RRR (if match_to_target) or <data_path>/REGULAR_RRR.
     Creates the directory if it doesn't exist.
     """
-    d = runtime.get_cfg().get_regular_rrr_dir()
+    d = runtime.cfg.get_regular_rrr_dir()
     if match_to_target:
-        d = runtime.get_cfg().get_target_rrr_dir()
+        d = runtime.cfg.get_target_rrr_dir()
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -36,3 +36,14 @@ def mv_r2(y_true, y_pred, is_poisson_proxy: bool = False) -> float:
             sse = np.square(y_true - y_pred).sum()
             sst = np.square(y_true - y_true.mean(axis=0, keepdims=True)).sum() + 1e-12
             return float(1.0 - sse / sst)
+
+def calc_d95(rrr_mean: np.ndarray, ridge_mean: float, d_max: int) -> int:
+    """
+    Compute minimal dimension d such that RRR(d) >= 0.95 * Ridge_R^2.
+    Returns d_max if 95% threshold is not reached.
+    (Shared logic across Semedo and RepetitionStability).
+    """
+    thr = 0.95 * float(ridge_mean)
+    idx = np.where(rrr_mean >= thr)[0]
+    return int(idx[0] + 1) if idx.size else int(d_max)
+

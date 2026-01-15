@@ -33,7 +33,7 @@ def plot_repetition_stability(
         # Connections (src, tgt): Red, Purple, Brown (Distinct from above)
         (1, 2): "tab:red", (1, 3): "tab:purple", (2, 3): "tab:brown"
     }
-    region_map = runtime.get_consts().REGION_ID_TO_NAME
+    region_map = runtime.consts.REGION_ID_TO_NAME
     
     all_handles = []
     
@@ -155,14 +155,37 @@ def plot_repetition_stability(
         p.mkdir(parents=True, exist_ok=True)
         # Construct filename from first result metadata
         r0 = results[0]
-        # Using string conversion just in case
-        mk = str(r0['monkey']).replace(' ','')
-        md = str(r0['method'])
-        bs = str(r0['block_size'])
-        fname = f"{mk}_RepetitionStability_{md}_blk{bs}.png"
+        # Construct path using new helper
+        # We need to map dict keys back to function args
+        fname = runtime.paths.get_rep_stability_path(
+            output_dir="", # name only, handled by p / fname below? No, helper joins path. 
+                           # Helper returns Path object. 
+                           # But here out_dir is passed to plot function. 
+                           # Helper takes output_dir.
+            monkey_name=r0["monkey"],
+            analysis_type=r0["method"], # result key is "method"
+            group_size=r0["block_size"],
+            # Check if it's region or connection
+            region_id=int(r0["region_id"]) if r0["type"] == "region" else None,
+            src_tgt=(int(r0["src_id"]), int(r0["tgt_id"])) if r0["type"] == "connection" else None,
+            extension=".png"
+        ).name # We just want the name here to join with 'p' (out_dir) OR we use function fully.
         
-        fig.savefig(p / fname, dpi=300, bbox_inches="tight")
-        print(f"[✓] Stability Plot Saved → {p / fname}")
+        # If we use the function fully:
+        # full_path = get_rep_stability_path(out_dir, ...)
+        
+        full_path = runtime.paths.get_rep_stability_path(
+            output_dir=out_dir,
+            monkey_name=r0["monkey"],
+            analysis_type=r0["method"],
+            group_size=r0["block_size"],
+            region_id=int(r0["region_id"]) if r0["type"] == "region" else None,
+            src_tgt=(int(r0["src_id"]), int(r0["tgt_id"])) if r0["type"] == "connection" else None,
+            extension=".png"
+        )
+        
+        fig.savefig(full_path, dpi=300, bbox_inches="tight")
+        print(f"[✓] Stability Plot Saved → {full_path}")
         plt.close(fig)
     else:
         plt.show()
@@ -171,7 +194,7 @@ def plot_overlap_matrix(overlap_matrix: np.ndarray, D_common: int, method: str) 
     """
     Plot heatmap of subspace overlaps (Kyle's method).
     """
-    cfg = runtime.get_cfg()
+    cfg = runtime.cfg
     n_reps = overlap_matrix.shape[0]
 
     fig, ax = plt.subplots(figsize=(7, 6))
@@ -220,7 +243,7 @@ def plot_all_overlaps_grid(
     """
     Render a grid of overlap matrices covering multiple monkeys, z-scores, and methods.
     """
-    consts = runtime.get_consts()
+    consts = runtime.consts
     region_name = consts.REGION_ID_TO_NAME.get(region, f"Region{region}")
     
     R, Z, M = len(monkeys), len(zscore_codes), len(methods)
@@ -307,7 +330,7 @@ def plot_all_overlaps_grid(
     # --- Save ---
     saved_path = None
     if save:
-        base_dir = Path(save_dir) if save_dir is not None else (runtime.get_consts().BASE_DIR / "PLOTS_HEAT_MAP")
+        base_dir = Path(save_dir) if save_dir is not None else (runtime.consts.BASE_DIR / "PLOTS_HEAT_MAP")
         base_dir.mkdir(parents=True, exist_ok=True)
         mtag = "M-" + "-".join(m.replace(" ", "") for m in monkeys)
         ztag = "Z-" + "-".join(str(z) for z in zscore_codes)

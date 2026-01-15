@@ -1,12 +1,12 @@
-from __future__ import annotations
+
+from pathlib import Path
 import numpy as np
 from core.runtime import runtime
 
-def build_trial_matrix(*args, **kwargs):
-    """
-    Local wrapper for runtime.get_data_manager().build_trial_matrix.
-    """
-    return runtime.get_data_manager().build_trial_matrix(*args, **kwargs)
+
+
+
+
 
 def build_groups_by_rep_or_subsets(trials: list[dict], *, k_subsets: int | None, random_state: int):
     """

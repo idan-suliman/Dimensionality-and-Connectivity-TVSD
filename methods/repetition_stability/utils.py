@@ -52,35 +52,27 @@ def extract_lag_data(O: np.ndarray):
             
     return np.array(lags_all), np.array(vals_all), unique_lags, np.array(means), np.array(sems)
 
-def get_file_path(analyzer, output_dir: str, region_id: int | None = None, src_tgt: Tuple[int, int] | None = None, suffix: str = "") -> Path:
-    """
-    Generate consistent filename for saving/loading.
-    """
-    p = Path(output_dir)
-    mk = analyzer.monkey.replace(" ", "")
-    bt = f"blk{analyzer.group_size}"
-    
-    if region_id is not None:
-        nm = runtime.get_consts().REGION_ID_TO_NAME.get(region_id, f"Reg{region_id}")
-        fname = f"{mk}_{nm}_{analyzer.analysis_type}_{bt}{suffix}.npz"
-    elif src_tgt is not None:
-        s = runtime.get_consts().REGION_ID_TO_NAME.get(src_tgt[0], f"Reg{src_tgt[0]}")
-        t = runtime.get_consts().REGION_ID_TO_NAME.get(src_tgt[1], f"Reg{src_tgt[1]}")
-        fname = f"{mk}_{s}_to_{t}_{analyzer.analysis_type}_{bt}{suffix}.npz"
-    else:
-        raise ValueError("Must provide either region_id or src_tgt pair.")
-        
-    return p / fname
-
 def save_results(analyzer, result: Dict[str, Any], output_dir: str, fpath=None):
     p = Path(output_dir)
     p.mkdir(parents=True, exist_ok=True)
     
     if fpath is None:
         if result["type"] == "region":
-            save_path = analyzer.get_file_path(output_dir, region_id=result["region_id"])
+            save_path = runtime.paths.get_rep_stability_path(
+                analyzer.monkey,
+                analyzer.analysis_type,
+                analyzer.group_size,
+                region_id=result["region_id"],
+                output_dir=output_dir
+            )
         else:
-            save_path = analyzer.get_file_path(output_dir, src_tgt=(result["src_id"], result["tgt_id"]))
+            save_path = runtime.paths.get_rep_stability_path(
+                analyzer.monkey,
+                analyzer.analysis_type,
+                analyzer.group_size,
+                src_tgt=(result["src_id"], result["tgt_id"]),
+                output_dir=output_dir
+            )
     else:
         save_path = fpath
         

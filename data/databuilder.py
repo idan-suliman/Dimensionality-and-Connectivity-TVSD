@@ -9,8 +9,8 @@ from tqdm import tqdm
 class DataBuilder:
     @staticmethod
     def build_if_missing():
-        cfg = runtime.get_cfg()
-        file_path = runtime.get_cfg().get_main_data_file_path()
+        cfg = runtime.cfg
+        file_path = runtime.cfg.get_main_data_file_path()
         if file_path.exists():
             print(f"[✓] Data file already exists: {file_path.name}")
             return
@@ -33,7 +33,7 @@ class DataBuilder:
     @staticmethod
     def load_raw_data():
         """Loads the raw test trials from Z=1"""
-        raw_path = runtime.get_consts().BASE_DIR / runtime.get_cfg().get_monkey_name() / "1_without_z_score" / "test_trials_full_data.pkl"
+        raw_path = runtime.consts.BASE_DIR / runtime.cfg.get_monkey_name() / "1_without_z_score" / "test_trials_full_data.pkl"
 
         if not raw_path.exists():
             raise FileNotFoundError(f"Expected raw file not found: {raw_path}")
@@ -48,8 +48,8 @@ class DataBuilder:
         """Build Z-score per electrode using region-specific time windows, fully via CONFIG."""
         print("[🔧] Running original Z-score normalization...")
 
-        cfg = runtime.get_cfg()
-        consts = runtime.get_consts()
+        cfg = runtime.cfg
+        consts = runtime.consts
 
         region_map     = consts.REGION_ID_TO_NAME
         region_windows = consts.REGION_WINDOWS
@@ -106,8 +106,8 @@ class DataBuilder:
 
         print("[🔧] Running global Z-score normalization across all days...")
 
-        cfg     = runtime.get_cfg()
-        consts  = runtime.get_consts()
+        cfg     = runtime.cfg
+        consts  = runtime.consts
 
         region_map     = consts.REGION_ID_TO_NAME
         region_windows = consts.REGION_WINDOWS
@@ -157,8 +157,8 @@ class DataBuilder:
         """Repetition-wise Z-score normalization using CONFIG (per electrode × repetition)."""
         print("[🔧] Running repetition-wise Z-score normalization...")
 
-        cfg     = runtime.get_cfg()
-        consts  = runtime.get_consts()
+        cfg     = runtime.cfg
+        consts  = runtime.consts
 
         region_map     = consts.REGION_ID_TO_NAME
         region_windows = consts.REGION_WINDOWS

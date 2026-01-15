@@ -6,6 +6,7 @@ from core.runtime import runtime
 from ..pca import RegionPCA
 from ..rrr import RRRAnalyzer
 
+
 def analyze_region_curve(analyzer, region_id: int, max_dims: int = 30, 
                          precomputed_blocks: Optional[List[np.ndarray]] = None,
                          force_recompute: bool = False) -> Dict[str, Any]:
@@ -13,8 +14,13 @@ def analyze_region_curve(analyzer, region_id: int, max_dims: int = 30,
     Computes the curve for a single region (Intrinsic Stability).
     Returns dictionary with 'dims', 'rhos', 'p_vals'.
     """
-    output_dir = runtime.get_config().get_out_path() / "ANALYSIS_RESULTS" / analyzer.rep_stab._get_subfolder_name()
-    fpath = analyzer.get_file_path(str(output_dir), region_id=region_id)
+    # Use get_data_path() implicit default
+    fpath = runtime.paths.get_dim_corr_path(
+        analyzer.monkey,
+        analyzer.analysis_type,
+        analyzer.group_size,
+        region_id=region_id
+    )
     
     if not force_recompute and fpath.exists():
         print(f"[DimCorr] Loading {fpath.name}")
@@ -93,7 +99,7 @@ def analyze_region_curve(analyzer, region_id: int, max_dims: int = 30,
     }
     
     # Save
-    analyzer.rep_stab.save_results(result, str(output_dir), fpath=fpath)
+    analyzer.rep_stab.save_results(result, str(fpath.parent), fpath=fpath)
     return result
 
 def analyze_connection_curve(analyzer, src_id: int, tgt_id: int, max_dims: int = 30,
@@ -103,8 +109,13 @@ def analyze_connection_curve(analyzer, src_id: int, tgt_id: int, max_dims: int =
     """
     Computes the curve for a connection (Predictive Stability).
     """
-    output_dir = runtime.get_cfg().get_data_path() / "ANALYSIS_RESULTS" / analyzer.rep_stab._get_subfolder_name()
-    fpath = analyzer.get_file_path(str(output_dir), src_tgt=(src_id, tgt_id))
+    # Use get_out_path() as base() implicit default
+    fpath = runtime.paths.get_dim_corr_path(
+        analyzer.monkey,
+        analyzer.analysis_type,
+        analyzer.group_size,
+        src_tgt=(src_id, tgt_id)
+    )
     
     if not force_recompute and fpath.exists():
         print(f"[DimCorr] Loading {fpath.name}")
@@ -239,5 +250,5 @@ def analyze_connection_curve(analyzer, src_id: int, tgt_id: int, max_dims: int =
         "meta": {"src": src_id, "tgt": tgt_id, "type": "predictive"}
     }
     
-    analyzer.rep_stab.save_results(result, str(output_dir), fpath=fpath)
+    analyzer.rep_stab.save_results(result, str(fpath.parent), fpath=fpath)
     return result

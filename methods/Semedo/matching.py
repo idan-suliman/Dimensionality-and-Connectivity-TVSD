@@ -3,12 +3,10 @@ import numpy as np
 import time
 from datetime import datetime
 from core.runtime import runtime
-from ..matchingSubset import MATCHINGSUBSET
+from ..matchingSubset import match_and_save
 from ..rrr import RRRAnalyzer
 
-# Local wrapper for convenience if needed, but we can import direct from source
-def build_trial_matrix(*args, **kwargs):
-    return runtime.get_data_manager().build_trial_matrix(*args, **kwargs)
+
 
 def get_match_subset_indices(source_region: int, target_region: int, *, analysis_type: str) -> np.ndarray:
     """
@@ -16,16 +14,13 @@ def get_match_subset_indices(source_region: int, target_region: int, *, analysis
     the target region's firing rate distribution.
     File: TARGET_RRR/<ANALYSIS>/V1_to_<TARGET>_<ANALYSIS>.npz
     """
-    consts = runtime.get_consts()
-    cfg = runtime.get_cfg()
+    consts = runtime.consts
+    cfg = runtime.cfg
 
     target_name = consts.REGION_ID_TO_NAME[target_region]
-    match_path = (
-        cfg.get_data_path() / "TARGET_RRR" / analysis_type.upper() /
-        f"V1_to_{target_name}_{analysis_type}.npz"
-    )
+    match_path = runtime.paths.get_matching_path(analysis_type, "V1", target_name, ".npz")
     if not match_path.exists():
-        MATCHINGSUBSET.match_and_save(
+        match_and_save(
             "V1", target_name,
             stat_mode=analysis_type, show_plot=False, verbose=False
         )
@@ -149,8 +144,8 @@ def match_subset_for_trials_and_electrodes(
     """
     rng = np.random.default_rng(seed)
 
-    Xs = build_trial_matrix(source_region, analysis_type, trial_idx=trial_idx, electrode_indices=src_subset_phys)
-    Xt = build_trial_matrix(target_region, analysis_type, trial_idx=trial_idx, electrode_indices=tgt_subset_phys)
+    Xs = runtime.data_manager.build_trial_matrix(source_region, analysis_type, trial_idx=trial_idx, electrode_indices=src_subset_phys)
+    Xt = runtime.data_manager.build_trial_matrix(target_region, analysis_type, trial_idx=trial_idx, electrode_indices=tgt_subset_phys)
     
     # We can reuse the prebuilt logic since we have Xs and Xt
     match_loc, remain_loc, _, _ = match_subset_from_prebuilt(

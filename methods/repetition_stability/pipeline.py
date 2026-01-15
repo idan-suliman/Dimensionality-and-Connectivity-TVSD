@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 from core.runtime import runtime
 
+
 def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool = False):
     """
     Executes the full repetition stability analysis pipeline:
@@ -21,15 +22,9 @@ def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool
     # Ideally, we should import from the new structure if possible, or keep it dynamic.
     from visualization import plot_repetition_stability
 
-    # 1. Output Directories
-    base_data_path = runtime.get_cfg().get_data_path()
-    dir_region = base_data_path / "Repetition_Stability" / "Region"
-    dir_conn = base_data_path / "Repetition_Stability" / "Connection"
-    dir_plots = base_data_path / "Repetition_Stability" / "Repetition_Stability_plots"
-    
-    dir_region.mkdir(parents=True, exist_ok=True)
-    dir_conn.mkdir(parents=True, exist_ok=True)
-    dir_plots.mkdir(parents=True, exist_ok=True)
+    # 1. Base Data Path
+    base_data_path = runtime.cfg.get_data_path()
+
 
     all_results = []
     
@@ -42,7 +37,13 @@ def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool
 
     # 2. Region Analysis
     for rid in regions:
-        fpath = analyzer.get_file_path(str(dir_region), region_id=rid)
+        fpath = runtime.paths.get_rep_stability_path(
+            analyzer.monkey, 
+            analyzer.analysis_type, 
+            analyzer.group_size, 
+            region_id=rid,
+            output_dir=base_data_path
+        )
         
         if fpath.exists() and not force_recompute:
             print(f"    [SKIP] Region {rid} analysis already exists. Loading...")
@@ -59,12 +60,18 @@ def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool
         else:
             print(f"    > Analyzing Region {rid}...")
             res = analyzer.analyze_region(rid)
-            analyzer.save_results(res, str(dir_region))
+            analyzer.save_results(res, base_data_path)
             all_results.append(res)
 
     # 3. Connection Analysis
     for src, tgt in connections:
-        fpath = analyzer.get_file_path(str(dir_conn), src_tgt=(src, tgt))
+        fpath = runtime.paths.get_rep_stability_path(
+            analyzer.monkey, 
+            analyzer.analysis_type, 
+            analyzer.group_size, 
+            src_tgt=(src, tgt),
+            output_dir=base_data_path
+        )
         
         if fpath.exists() and not force_recompute:
                 print(f"    [SKIP] Connection {src}->{tgt} analysis already exists. Loading...")
@@ -80,13 +87,13 @@ def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool
         else:
             print(f"    > Analyzing Connection {src}->{tgt}...")
             res = analyzer.analyze_connection(src, tgt)
-            analyzer.save_results(res, str(dir_conn))
+            analyzer.save_results(res, base_data_path)
             all_results.append(res)
 
     # 4. Visualization
     print(f"    > Generating Plots...")
     plot_repetition_stability(
         all_results,
-        out_dir=str(dir_plots),
+        out_dir=str(base_data_path),
         show_errorbars=True
     )

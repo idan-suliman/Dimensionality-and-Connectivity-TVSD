@@ -21,7 +21,7 @@ if __name__ == "__main__":
             
             try:
                 # 0. Configure Runtime
-                runtime.set_cfg(monkey, z_score)
+                runtime.update(monkey, z_score)
                 
                 for analysis_type in analysis_types:
                     print(f"\n{'-'*40}")

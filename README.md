@@ -132,8 +132,8 @@ This is the **authoritative** lookup through all stages for:
 - assigning electrodes to **V1 / V4 / IT**,
 - maintaining **stable channel identities across days**.
 
-In code: load via `config.py` → access with `runtime.get_cfg().get_mapping()`; ROI vector via  
-`runtime.get_consts().ROIS_PHYSICAL_BY_MONKEY[...]`.  
+In code: load via `config.py` → access with `runtime.cfg.get_mapping()`; ROI vector via  
+`runtime.consts.ROIS_PHYSICAL_BY_MONKEY[...]`.  
 To convert: `logical_rois = physical_rois[mapping]`.
 
 ---

@@ -27,7 +27,17 @@ class DimCorrAnalyzer:
         )
 
     def get_file_path(self, output_dir: str, region_id: int | None = None, src_tgt: Tuple[int, int] | None = None, suffix: str = "_dim_corr") -> Any:
-        return utils.get_file_path(self, output_dir, region_id, src_tgt, suffix)
+        # Delegate to runtime.paths
+        # Note: We must respect the signature or default correctly.
+        return runtime.paths.get_dim_corr_path(
+            self.monkey,
+            self.analysis_type,
+            self.group_size,
+            region_id=region_id,
+            src_tgt=src_tgt,
+            suffix=suffix,
+            output_dir=output_dir
+        )
 
     def _compute_overlap_matrix(self, bases: List[np.ndarray]) -> np.ndarray:
         return utils.compute_overlap_matrix(self, bases)

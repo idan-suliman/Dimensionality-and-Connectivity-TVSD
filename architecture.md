@@ -9,7 +9,7 @@ This document outlines the structure of the refactored TVSD codebase. The system
 *   **Purpose**: Central singleton managing the global application state.
 *   **Key Components**:
     *   `RUNTIME` class: Holds `CONFIG` and `DataManager` instances.
-    *   `set_cfg(monkey, z_score)`: Initializes the environment for a run.
+    *   `update(monkey, z_score)`: Initializes the environment for a run.
 
 ### `core.config`
 *   **Purpose**: Handles file paths, monkey-specific parameters (ROIs, electrodes), and low-level configuration.

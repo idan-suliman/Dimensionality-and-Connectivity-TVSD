@@ -32,7 +32,7 @@ class DimCorrVisualizer:
                     lbl = res["src"]
                 else:
                     try:
-                        name = runtime.get_consts().REGION_ID_TO_NAME[res['id']]
+                        name = runtime.consts.REGION_ID_TO_NAME[res['id']]
                         lbl = name
                     except:
                         lbl = f"Region {res['id']}"

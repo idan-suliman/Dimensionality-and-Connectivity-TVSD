@@ -30,9 +30,9 @@ class RepetitionStabilityAnalyzer:
         self.group_size = group_size
         
         # Configure runtime
-        runtime.set_cfg(self.monkey, self.z_code)
-        self.dm = runtime.get_data_manager()
-        self.cfg = runtime.get_cfg()
+        runtime.update(self.monkey, self.z_code)
+        self.dm = runtime.data_manager
+        self.cfg = runtime.cfg
 
     def get_blocked_data(self, region_id: int) -> List[np.ndarray]:
         return utils.get_blocked_data(self, region_id)
@@ -60,7 +60,15 @@ class RepetitionStabilityAnalyzer:
         utils.save_results(self, result, output_dir, fpath)
 
     def get_file_path(self, output_dir: str, region_id: int | None = None, src_tgt: Any | None = None, suffix: str = ""):
-        return utils.get_file_path(self, output_dir, region_id, src_tgt, suffix)
+        return runtime.paths.get_rep_stability_path(
+            self.monkey,
+            self.analysis_type,
+            self.group_size,
+            region_id=region_id,
+            src_tgt=src_tgt,
+            suffix=suffix,
+            output_dir=output_dir 
+        )
 
     def run_pipeline(self, force_recompute: bool = False):
         pipeline.run_pipeline(self, force_recompute)

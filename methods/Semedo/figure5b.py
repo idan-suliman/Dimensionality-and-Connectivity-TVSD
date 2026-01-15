@@ -4,9 +4,11 @@ from pathlib import Path
 import csv
 from core.runtime import runtime
 from ..rrr import RRRAnalyzer
-from visualization import SemedoFigures, d95_from_curves
+from visualization import SemedoFigures
+from ..rrr.metrics import calc_d95
 from ..pca import RegionPCA
-from .utils import build_trial_matrix
+
+
 
 def build_semedo_figure_5_b(
     *,
@@ -26,22 +28,25 @@ def build_semedo_figure_5_b(
     Generate Figure 5B (Comparison of RRR vs Ridge performance and dimensionality).
     If a CSV with the same name exists and force_recompute is False, plots from CSV directly.
     """
-    # runtime.set_cfg(monkey_name, z_score_index) -> Config assumed set by driver
-    consts = runtime.get_consts()
-    cfg    = runtime.get_cfg()
+    # runtime.update(monkey_name, z_score_index) -> Config assumed set by driver
+    consts = runtime.consts
+    cfg    = runtime.cfg
+    dm     = runtime.data_manager
     
-    if filename is None:
-        filename = f"figure_5_B_{analysis_type.upper()}_{num_sets}_SETS.png"
+    # Get default path from runtime
+    fig_path = runtime.paths.get_semedo_figure_path("Figure_5_B", analysis_type, num_sets=num_sets)
     
-    if csv_name is None:
-        csv_name = str(Path(filename).with_suffix(".csv"))
+    # If a custom filename is provided, override the name but keep the directory
+    if filename is not None:
+        fig_path = fig_path.parent / filename
         
-    data_root: Path = cfg.get_data_path()
-    out_dir: Path = data_root / "Semedo_plots" / "figure_5_B"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    
-    csv_path = out_dir / csv_name
-    fig_path = out_dir / filename
+    # Ensure directory exists (redundant if get_semedo_figure_path does it, but safe for custom filename case)
+    fig_path.parent.mkdir(parents=True, exist_ok=True)
+        
+    if csv_name is None:
+        csv_path = fig_path.with_suffix(".csv")
+    else:
+        csv_path = fig_path.parent / csv_name
 
     # --- caching check ---
     if not force_recompute and csv_path.exists():
@@ -60,14 +65,17 @@ def build_semedo_figure_5_b(
     stat_key  = analysis_type.strip().lower()
 
     # subsets (precomputed matching required)
-    subset_dir = data_root / "TARGET_RRR" / stat_key.upper()
-    v1_subset_v4_phys = np.asarray(np.load(subset_dir / f"V1_to_V4_{stat_key}.npz")["phys_idx"], dtype=int)
-    v1_subset_it_phys = np.asarray(np.load(subset_dir / f"V1_to_IT_{stat_key}.npz")["phys_idx"], dtype=int)
+    # Using runtime.paths to get matching files
+    path_v1_v4 = runtime.paths.get_matching_path(stat_key, "V1", "V4")
+    path_v1_it = runtime.paths.get_matching_path(stat_key, "V1", "IT")
+    
+    v1_subset_v4_phys = np.asarray(np.load(path_v1_v4)["phys_idx"], dtype=int)
+    v1_subset_it_phys = np.asarray(np.load(path_v1_it)["phys_idx"], dtype=int)
 
     # load full matrices
-    V1_full = build_trial_matrix(region_id=rid_v1, analysis_type=stat_key)
-    V4_full = build_trial_matrix(region_id=rid_v4, analysis_type=stat_key)
-    IT_full = build_trial_matrix(region_id=rid_it, analysis_type=stat_key)
+    V1_full = dm.build_trial_matrix(region_id=rid_v1, analysis_type=stat_key)
+    V4_full = dm.build_trial_matrix(region_id=rid_v4, analysis_type=stat_key)
+    IT_full = dm.build_trial_matrix(region_id=rid_it, analysis_type=stat_key)
     T = int(V1_full.shape[0])
 
     # complements
@@ -76,69 +84,68 @@ def build_semedo_figure_5_b(
     comp_it_phys = np.array(sorted(set(all_v1_phys) - set(v1_subset_it_phys)), dtype=int)
 
     # Helpers adapted to project utils
-    def _pca_d95_util(M):
-        return RegionPCA().fit(M).get_n_components(threshold)
 
-    def _d95_rrr_util(res, dmax_val):
-        return d95_from_curves(res["rrr_R2_mean"], res["ridge_R2_mean"], dmax_val)
+
+
 
     # ---------- FULL DATA POINTS ----------
-    full_x_v4 = _pca_d95_util(V4_full)
-    full_x_it = _pca_d95_util(IT_full)
+    full_x_v4 = RegionPCA().fit(V4_full).get_n_components(threshold)
+    full_x_it = RegionPCA().fit(IT_full).get_n_components(threshold)
 
-    full_x_v1v4 = _pca_d95_util(
-        build_trial_matrix(
+    full_x_v1v4 = RegionPCA().fit(
+        dm.build_trial_matrix(
             region_id=rid_v1,
             analysis_type=stat_key,
             trials=None,
             electrode_indices=v1_subset_v4_phys
         )
-    )
-    full_x_v1it = _pca_d95_util(
-        build_trial_matrix(
+    ).get_n_components(threshold)
+
+    full_x_v1it = RegionPCA().fit(
+        dm.build_trial_matrix(
             region_id=rid_v1,
             analysis_type=stat_key,
             trials=None,
             electrode_indices=v1_subset_it_phys
         )
-    )
+    ).get_n_components(threshold)
 
-    X_v1_minus_v4_full = build_trial_matrix(
+    X_v1_minus_v4_full = dm.build_trial_matrix(
         region_id=rid_v1, analysis_type=stat_key, trials=None, electrode_indices=comp_v4_phys
     )
-    X_v1_minus_it_full = build_trial_matrix(
+    X_v1_minus_it_full = dm.build_trial_matrix(
         region_id=rid_v1, analysis_type=stat_key, trials=None, electrode_indices=comp_it_phys
     )
 
-    dmax_calc = lambda X, Y: int(min(X.shape[1], Y.shape[1], 512))
+
 
     full_res_v4 = RRRAnalyzer._performance_from_mats(
         V4_full, X_v1_minus_v4_full,
-        d_max=dmax_calc(X_v1_minus_v4_full, V4_full),
+        d_max=int(min(X_v1_minus_v4_full.shape[1], V4_full.shape[1], 512)),
         alpha=alpha, outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+111
     )
     full_res_v1v4 = RRRAnalyzer._performance_from_mats(
-        build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=None, electrode_indices=v1_subset_v4_phys),
+        dm.build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=None, electrode_indices=v1_subset_v4_phys),
         X_v1_minus_v4_full,
-        d_max=dmax_calc(X_v1_minus_v4_full, V1_full),
+        d_max=int(min(X_v1_minus_v4_full.shape[1], V1_full.shape[1], 512)),
         alpha=alpha, outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+222
     )
     full_res_it = RRRAnalyzer._performance_from_mats(
         IT_full, X_v1_minus_it_full,
-        d_max=dmax_calc(X_v1_minus_it_full, IT_full),
+        d_max=int(min(X_v1_minus_it_full.shape[1], IT_full.shape[1], 512)),
         alpha=alpha, outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+333
     )
     full_res_v1it = RRRAnalyzer._performance_from_mats(
-        build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=None, electrode_indices=v1_subset_it_phys),
+        dm.build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=None, electrode_indices=v1_subset_it_phys),
         X_v1_minus_it_full,
-        d_max=dmax_calc(X_v1_minus_it_full, V1_full), # Used V1_full in snippet
+        d_max=int(min(X_v1_minus_it_full.shape[1], V1_full.shape[1], 512)), # Used V1_full in snippet
         alpha=alpha, outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+444
     )
 
-    full_y_v4 = _d95_rrr_util(full_res_v4, dmax_calc(X_v1_minus_v4_full, V4_full))
-    full_y_v1v4 = _d95_rrr_util(full_res_v1v4, dmax_calc(X_v1_minus_v4_full, V1_full))
-    full_y_it = _d95_rrr_util(full_res_it, dmax_calc(X_v1_minus_it_full, IT_full))
-    full_y_v1it = _d95_rrr_util(full_res_v1it, dmax_calc(X_v1_minus_it_full, V1_full))
+    full_y_v4 = calc_d95(full_res_v4["rrr_R2_mean"], full_res_v4["ridge_R2_mean"], int(min(X_v1_minus_v4_full.shape[1], V4_full.shape[1], 512)))
+    full_y_v1v4 = calc_d95(full_res_v1v4["rrr_R2_mean"], full_res_v1v4["ridge_R2_mean"], int(min(X_v1_minus_v4_full.shape[1], V1_full.shape[1], 512)))
+    full_y_it = calc_d95(full_res_it["rrr_R2_mean"], full_res_it["ridge_R2_mean"], int(min(X_v1_minus_it_full.shape[1], IT_full.shape[1], 512)))
+    full_y_v1it = calc_d95(full_res_v1it["rrr_R2_mean"], full_res_v1it["ridge_R2_mean"], int(min(X_v1_minus_it_full.shape[1], V1_full.shape[1], 512)))
 
     full_points = {
         "V4":             (full_x_v4, full_y_v4),
@@ -161,50 +168,70 @@ def build_semedo_figure_5_b(
     }
 
     for i, idx in enumerate(parts):
-        X_v1_minus_v4 = build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=idx, electrode_indices=comp_v4_phys)
-        X_v1_minus_it = build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=idx, electrode_indices=comp_it_phys)
+        X_v1_minus_v4 = dm.build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=idx, electrode_indices=comp_v4_phys)
+        X_v1_minus_it = dm.build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=idx, electrode_indices=comp_it_phys)
         Y_v4 = V4_full[idx, :]
         Y_it = IT_full[idx, :]
-        Y_v1_sub_v4 = build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=idx, electrode_indices=v1_subset_v4_phys)
-        Y_v1_sub_it = build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=idx, electrode_indices=v1_subset_it_phys)
+        Y_v1_sub_v4 = dm.build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=idx, electrode_indices=v1_subset_v4_phys)
+        Y_v1_sub_it = dm.build_trial_matrix(region_id=rid_v1, analysis_type=stat_key, trials=idx, electrode_indices=v1_subset_it_phys)
 
         # PCA
-        x_v4  = _pca_d95_util(Y_v4)
-        x_it  = _pca_d95_util(Y_it)
-        x_v1v4 = _pca_d95_util(Y_v1_sub_v4)
-        x_v1it = _pca_d95_util(Y_v1_sub_it)
+        x_v4  = RegionPCA().fit(Y_v4).get_n_components(threshold)
+        x_it  = RegionPCA().fit(Y_it).get_n_components(threshold)
+        x_v1v4 = RegionPCA().fit(Y_v1_sub_v4).get_n_components(threshold)
+        x_v1it = RegionPCA().fit(Y_v1_sub_it).get_n_components(threshold)
 
         # RRR
-        dm_v4 = dmax_calc(X_v1_minus_v4, Y_v4)
-        y_v4 = _d95_rrr_util(
+        dm_v4 = int(min(X_v1_minus_v4.shape[1], Y_v4.shape[1], 512))
+        y_v4 = calc_d95(
             RRRAnalyzer._performance_from_mats(
                 Y_v4, X_v1_minus_v4, d_max=dm_v4, alpha=alpha, 
                 outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i
-            ), dm_v4
+            )["rrr_R2_mean"], 
+            RRRAnalyzer._performance_from_mats(
+                Y_v4, X_v1_minus_v4, d_max=dm_v4, alpha=alpha, 
+                outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i
+            )["ridge_R2_mean"], 
+            dm_v4
         )
 
-        dm_v1v4 = dmax_calc(X_v1_minus_v4, Y_v1_sub_v4)
-        y_v1v4 = _d95_rrr_util(
+        dm_v1v4 = int(min(X_v1_minus_v4.shape[1], Y_v1_sub_v4.shape[1], 512))
+        y_v1v4 = calc_d95(
             RRRAnalyzer._performance_from_mats(
                 Y_v1_sub_v4, X_v1_minus_v4, d_max=dm_v1v4, alpha=alpha,
                 outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i+1
-            ), dm_v1v4
+            )["rrr_R2_mean"],
+            RRRAnalyzer._performance_from_mats(
+                Y_v1_sub_v4, X_v1_minus_v4, d_max=dm_v1v4, alpha=alpha,
+                outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i+1
+            )["ridge_R2_mean"], 
+            dm_v1v4
         )
 
-        dm_it = dmax_calc(X_v1_minus_it, Y_it)
-        y_it = _d95_rrr_util(
+        dm_it = int(min(X_v1_minus_it.shape[1], Y_it.shape[1], 512))
+        y_it = calc_d95(
             RRRAnalyzer._performance_from_mats(
                 Y_it, X_v1_minus_it, d_max=dm_it, alpha=alpha,
                 outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i+2
-            ), dm_it
+            )["rrr_R2_mean"],
+            RRRAnalyzer._performance_from_mats(
+                Y_it, X_v1_minus_it, d_max=dm_it, alpha=alpha,
+                outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i+2
+            )["ridge_R2_mean"],
+            dm_it
         )
 
-        dm_v1it = dmax_calc(X_v1_minus_it, Y_v1_sub_it)
-        y_v1it = _d95_rrr_util(
+        dm_v1it = int(min(X_v1_minus_it.shape[1], Y_v1_sub_it.shape[1], 512))
+        y_v1it = calc_d95(
             RRRAnalyzer._performance_from_mats(
                 Y_v1_sub_it, X_v1_minus_it, d_max=dm_v1it, alpha=alpha,
                 outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i+3
-            ), dm_v1it
+            )["rrr_R2_mean"],
+            RRRAnalyzer._performance_from_mats(
+                Y_v1_sub_it, X_v1_minus_it, d_max=dm_v1it, alpha=alpha,
+                outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i+3
+            )["ridge_R2_mean"],
+            dm_v1it
         )
 
         groups["V4"]["xs"].append(x_v4);              groups["V4"]["ys"].append(y_v4)

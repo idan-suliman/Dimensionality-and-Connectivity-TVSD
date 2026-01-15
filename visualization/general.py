@@ -11,7 +11,7 @@ from matplotlib import gridspec
 import matplotlib.patheffects as pe
 from pathlib import Path
 from core.runtime import runtime
-from .utils import d95_from_curves, jitter, square_limits, labeled_dot, smart_label
+from .utils import jitter, square_limits, labeled_dot, smart_label
 
 class GeneralPlots:
     """
@@ -21,7 +21,7 @@ class GeneralPlots:
     @staticmethod
     def get_title(region: str) -> str:
         """Standardized plot title."""
-        return f"{region} • {runtime.get_cfg().get_monkey_name()}  •  {runtime.get_cfg().get_zscore_title()}"
+        return f"{region} • {runtime.cfg.get_monkey_name()}  •  {runtime.cfg.get_zscore_title()}"
 
     @staticmethod
     def plot_mean_amplitude_by_repetition():
@@ -29,9 +29,9 @@ class GeneralPlots:
         Plot 1: Average amplitude across all stimuli per repetition.
         Plot 2: Same, but broken down by Region (V1/V4/IT).
         """
-        data = runtime.get_data_manager()._load_trials()
-        rois = runtime.get_cfg().get_rois()
-        region_names = runtime.get_consts().REGION_ID_TO_NAME
+        data = runtime.data_manager._load_trials()
+        rois = runtime.cfg.get_rois()
+        region_names = runtime.consts.REGION_ID_TO_NAME
 
         region_channels = {
             region_names[1]: np.where(rois == 1)[0],
@@ -77,7 +77,7 @@ class GeneralPlots:
         region_colors = {reg: color for reg, color in zip(region_channels.keys(), ["tab:red", "tab:blue", "tab:green"])}
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, sharey=True)
-        ylabel = "Mean Z-scored MUA" if runtime.get_cfg().get_zscore_code() != 1 else "Mean Raw MUA"
+        ylabel = "Mean Z-scored MUA" if runtime.cfg.get_zscore_code() != 1 else "Mean Raw MUA"
 
         ax1.plot(rep_indices, avg_amplitudes, color="gray", linewidth=1.5, zorder=1)
         for x, y, ci in zip(rep_indices, avg_amplitudes, color_indices):
@@ -107,15 +107,15 @@ class GeneralPlots:
         fig.suptitle(GeneralPlots.get_title("Mean All Regions"), fontsize=16, fontweight="bold")
         fig.tight_layout(rect=[0, 0, 0.9, 0.94])
 
-        out_path = runtime.get_cfg().get_plot_dir() / "mean_response_by_repetition.png"
+        out_path = runtime.cfg.get_plot_dir() / "mean_response_by_repetition.png"
         plt.savefig(out_path, dpi=300, bbox_inches="tight")
         plt.close()
         print(f"[📈] Saved plot to: {out_path.name}")
 
     @staticmethod
     def plot_repeatwise_timecourses(region: str = "V1"):
-        data = runtime.get_data_manager()._load_trials()
-        rois = runtime.get_cfg().get_rois()
+        data = runtime.data_manager._load_trials()
+        rois = runtime.cfg.get_rois()
 
         region_ids = {"V1": 1, "V4": 2, "IT": 3}
         region_id = region_ids[region.upper()]
@@ -165,7 +165,7 @@ class GeneralPlots:
         fig.suptitle(GeneralPlots.get_title(region), fontsize=22, fontweight="bold")
         fig.tight_layout(rect=[0, 0, 0.9, 0.94])
 
-        out_path = runtime.get_cfg().get_plot_dir() / f"{region}_repeatwise_timecourses.png"
+        out_path = runtime.cfg.get_plot_dir() / f"{region}_repeatwise_timecourses.png"
         plt.savefig(out_path, dpi=300, bbox_inches="tight")
         plt.close()
         print(f"[📈] Saved plot to: {out_path.name}")
@@ -178,9 +178,9 @@ class GeneralPlots:
 
     @staticmethod
     def plot_mean_std_amplitude_by_repetition():
-        data = runtime.get_data_manager()._load_trials()
-        rois_logical = runtime.get_cfg().get_rois()
-        region_names = runtime.get_consts().REGION_ID_TO_NAME
+        data = runtime.data_manager._load_trials()
+        rois_logical = runtime.cfg.get_rois()
+        region_names = runtime.consts.REGION_ID_TO_NAME
         
         region_channels = {
             region_names[1]: np.where(rois_logical == 1)[0],
@@ -228,7 +228,7 @@ class GeneralPlots:
         plt.suptitle(GeneralPlots.get_title("Mean All Regions"), fontsize=16, fontweight="bold")
         plt.tight_layout(rect=[0, 0, 1, 0.94])
         
-        out_path = runtime.get_cfg().get_plot_dir() / "mean_std_amplitude_by_repetition.png"
+        out_path = runtime.cfg.get_plot_dir() / "mean_std_amplitude_by_repetition.png"
         plt.savefig(out_path, dpi=300)
         plt.close()
         print(f"[📈] Saved errorbar plot to: {out_path.name}")
@@ -236,7 +236,7 @@ class GeneralPlots:
     @staticmethod
     def plot_global_electrode_and_trial_distribution():
         print("[🌍] Building global electrode & trial distribution plot...")
-        consts = runtime.get_consts()
+        consts = runtime.consts
         base = consts.BASE_DIR
         region_map = consts.REGION_ID_TO_NAME
         monkeys = consts.MONKEYS
@@ -246,15 +246,15 @@ class GeneralPlots:
         summary = {}
 
         for monkey in monkeys:
-            runtime.set_cfg(monkey, 1) 
-            cfg = runtime.get_cfg()
+            runtime.update(monkey, 1) 
+            cfg = runtime.cfg
 
             cnts = Counter(cfg.get_rois())
             summary[monkey] = {region_map[rid]: cnts.get(rid, 0) for rid in region_map}
             for rid, rname in region_map.items():
                 electrode_recs.append((monkey, rname, cnts.get(rid, 0)))
 
-            trials = runtime.get_data_manager()._load_trials()
+            trials = runtime.data_manager._load_trials()
             day_key = "day_id" if "day_id" in trials[0] else "dayID"
             for d, c in Counter(t[day_key] for t in trials).items():
                 trial_by_monkey[monkey][d] = c
@@ -302,8 +302,8 @@ class GeneralPlots:
 
     @staticmethod
     def plot_repeatwise_mean_timecourses_all_regions():
-        data = runtime.get_data_manager()._load_trials()
-        rois = runtime.get_cfg().get_rois()
+        data = runtime.data_manager._load_trials()
+        rois = runtime.cfg.get_rois()
         region_ids = {"V1": 1, "V4": 2, "IT": 3}
         NUM_REPS = 30
 
@@ -343,7 +343,7 @@ class GeneralPlots:
         fig.supxlabel("Time (ms)", fontsize=22)
         fig.tight_layout(rect=[0.05, 0.05, 0.90, 0.92])
 
-        out_path = runtime.get_cfg().get_plot_dir() / "repeatwise_mean_timecourses_all_regions.png"
+        out_path = runtime.cfg.get_plot_dir() / "repeatwise_mean_timecourses_all_regions.png"
         plt.savefig(out_path, dpi=300)
         plt.close()
         print(f"[📈] Saved plot to: {out_path.name}")
@@ -386,9 +386,9 @@ class GeneralPlots:
         # Iterate 1..4 (Rows)
         for z_idx, z_code in enumerate([1, 2, 3, 4]):
             # Re-initialize runtime for this Z-score
-            runtime.set_cfg(monkey, z_code)
-            data = runtime.get_data_manager()._load_trials()
-            rois = runtime.get_cfg().get_rois()
+            runtime.update(monkey, z_code)
+            data = runtime.data_manager._load_trials()
+            rois = runtime.cfg.get_rois()
             
             row_label_text = z_score_row_labels[z_code]
 
@@ -529,7 +529,7 @@ class GeneralPlots:
 
 
         
-        out_path = runtime.get_cfg().get_plot_dir() / f"PREVIEW_zscore_comparison_{monkey.replace(' ', '_')}.png"
+        out_path = runtime.cfg.get_plot_dir() / f"PREVIEW_zscore_comparison_{monkey.replace(' ', '_')}.png"
         plt.savefig(out_path, dpi=300)
         plt.close()
         print(f"[🖼️] Generated preview plot: {out_path.name}")
@@ -545,7 +545,7 @@ class GeneralPlots:
         print(f"\n[🧠] Plotting Electrode Matching V1->V4 ({analysis_type}) for {monkey_name}...")
         
         # Ensure correct config
-        runtime.set_cfg(monkey_name, 3) # Z=3 (Global) as per user request (Method 3)
+        runtime.update(monkey_name, 3) # Z=3 (Global) as per user request (Method 3)
         
         from methods.matchingSubset import MATCHINGSUBSET
         
@@ -625,7 +625,7 @@ class GeneralPlots:
         fig.tight_layout()
         
         # Save
-        out_path = runtime.get_cfg().get_plot_dir() / f"MATCHING_V1_V4_{stat_mode.upper()}_HighRes.png"
+        out_path = runtime.cfg.get_plot_dir() / f"MATCHING_V1_V4_{stat_mode.upper()}_HighRes.png"
         fig.savefig(out_path, dpi=300)
         plt.close(fig)
         print(f"[✓] Matching Histogram saved -> {out_path.name}")
@@ -664,7 +664,7 @@ class GeneralPlots:
         axB = fig.add_subplot(gs[0, 1]) # Right
 
         dims   = np.arange(1, d_max + 1)
-        tgt    = runtime.get_consts().REGION_ID_TO_NAME[target_region]
+        tgt    = runtime.consts.REGION_ID_TO_NAME[target_region]
         colA, colB = "#9C1C1C", "#1565C0"
         label_fs = 20
 
@@ -768,11 +768,11 @@ class GeneralPlots:
         """
         # 1. Setup Configuration
         if force_Z_code:
-            runtime.set_cfg(monkey_name, force_Z_code)
-        elif runtime.get_cfg().get_monkey_name() != monkey_name:
-             runtime.set_cfg(monkey_name, 2) # Default to 2 if not set
+            runtime.update(monkey_name, force_Z_code)
+        elif runtime.cfg.get_monkey_name() != monkey_name:
+             runtime.update(monkey_name, 2) # Default to 2 if not set
 
-        cfg = runtime.get_cfg()
+        cfg = runtime.cfg
         
         # 2. Locate Data
         out_dir = cfg.get_data_path() / "Semedo_plots" / "Figure_4"
@@ -850,7 +850,7 @@ class GeneralPlots:
         axB = fig.add_subplot(gs[0, 1]) # Right
 
         dims   = np.arange(1, d_max + 1)
-        tgt    = runtime.get_consts().REGION_ID_TO_NAME[target_region]
+        tgt    = runtime.consts.REGION_ID_TO_NAME[target_region]
         
         # Colors for runs - using a colormap or fixed list
         # User image uses distinct colors: Orange, Blue, Green, Purple, Red?
@@ -969,10 +969,10 @@ class GeneralPlots:
         Wrapper to find the most relevant cached .npz data for Figure 4 SUBSET and plot.
         """
         # Ensure runtime is configured
-        if runtime.get_cfg() is None or runtime.get_cfg().get_monkey_name() != monkey_name:
-            runtime.set_cfg(monkey_name, 3) # Defaulting to Global Z-score (3)
+        if runtime.cfg is None or runtime.cfg.get_monkey_name() != monkey_name:
+            runtime.update(monkey_name, 3) # Defaulting to Global Z-score (3)
 
-        cfg = runtime.get_cfg()
+        cfg = runtime.cfg
         # Ensure we look in the right Z-score/analysis folder?
         # The user provided path had 'subset/residual' inside.
         
@@ -1042,9 +1042,9 @@ class GeneralPlots:
         Filters for V4 and Target V4 (labeled as Target V1).
         """
         # 1. Config
-        if runtime.get_cfg() is None or runtime.get_cfg().get_monkey_name() != monkey_name:
-             runtime.set_cfg(monkey_name, 3)
-        cfg = runtime.get_cfg()
+        if runtime.cfg is None or runtime.cfg.get_monkey_name() != monkey_name:
+             runtime.update(monkey_name, 3)
+        cfg = runtime.cfg
 
         # 2. Find CSV
         # Expected: .../Semedo_plots/figure_5_B/figure_5_B_{ANALYSIS}_*_SETS.csv

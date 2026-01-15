@@ -2,19 +2,19 @@ from __future__ import annotations
 import numpy as np
 from typing import Optional, Sequence
 from core.runtime import runtime
-from ..matchingSubset import MATCHINGSUBSET
+from ..matchingSubset import match_and_save
 
 def build_mats(src_region: int, tgt_region: int, analysis_type: str, *, match_to_target: bool, trials: Optional[Sequence[int]] = None):
     """
     Construct X (source) and Y (target) matrices for analysis.
     If match_to_target is True, loads/computes the V1-subset that matches Target firing rates.
     """
-    rois   = runtime.get_cfg().get_rois()
-    src_name = runtime.get_consts().REGION_ID_TO_NAME[src_region]
-    tgt_name = runtime.get_consts().REGION_ID_TO_NAME[tgt_region]
+    rois   = runtime.cfg.get_rois()
+    src_name = runtime.consts.REGION_ID_TO_NAME[src_region]
+    tgt_name = runtime.consts.REGION_ID_TO_NAME[tgt_region]
 
     def build(reg_id, idx):
-        return runtime.get_data_manager().build_trial_matrix(
+        return runtime.data_manager.build_trial_matrix(
             region_id=reg_id,
             analysis_type=analysis_type,
             trials=trials,
@@ -27,12 +27,12 @@ def build_mats(src_region: int, tgt_region: int, analysis_type: str, *, match_to
 
     if match_to_target:
         # --- Load Matching Subset ---
-        dir_match = (runtime.get_cfg().get_data_path() / "TARGET_RRR" / analysis_type.upper())
+        dir_match = (runtime.cfg.get_data_path() / "TARGET_RRR" / analysis_type.upper())
         dir_match.mkdir(parents=True, exist_ok=True)
         subset_f = dir_match / f"{src_name}_to_{tgt_name}_{analysis_type}.npz"
         
         if not subset_f.exists():
-            MATCHINGSUBSET.match_and_save(
+            match_and_save(
                 src_name, tgt_name,
                 stat_mode=analysis_type,
                 show_plot=False, verbose=False)

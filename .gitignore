@@ -6,10 +6,11 @@ outputs/
 .env
 drivers/update_cache.py
 drivers/run_dim_correlation.py
-methods/visualization/general.py
+visualization/general.py
 inspect_keys.py
 inspect_fig5_data.py
 inspect_dims.py
 drivers/plot_driver.py
 drivers/plot_dim_corr.py
 drivers/driver_semedo.py
+drivers/verify_all_plots.py

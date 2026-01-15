@@ -2,8 +2,9 @@ from __future__ import annotations
 import numpy as np 
 from core.runtime import runtime
 from ..rrr import RRRAnalyzer
-from visualization import SemedoFigures, d95_from_curves
-from .utils import build_groups_by_rep_or_subsets, build_trial_matrix
+from visualization import SemedoFigures
+from ..rrr.metrics import calc_d95
+from .utils import build_groups_by_rep_or_subsets
 
 def build_figure_4(
     source_region: int = 1,          # V1
@@ -23,16 +24,15 @@ def build_figure_4(
     Calculates RRR and dimensionalities for Full and Match models.
     Supports caching via .npz file (same base name as image).
     """
-    cfg = runtime.get_cfg()
-    tgt_name = runtime.get_consts().REGION_ID_TO_NAME[target_region]
+    cfg = runtime.cfg
+    tgt_name = runtime.consts.REGION_ID_TO_NAME[target_region]
     
     # Construct paths
-    out_dir = runtime.get_cfg().get_data_path() / "Semedo_plots" / "Figure_4"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    
-    suffix = f"sub{k_subsets}" if k_subsets else "rep30"
-    base_name  = f"{runtime.get_cfg().get_monkey_name().replace(' ', '')}_Figure_4_{suffix}_{analysis_type}_V1_to_{tgt_name}"
-    npz_path = out_dir / f"{base_name}.npz"
+    npz_path = runtime.paths.get_semedo_figure_path(
+        "Figure_4", analysis_type, 
+        source_region=source_region, target_region=target_region, k_subsets=k_subsets
+    )
+    out_dir = npz_path.parent
     
     # --- Caching Check ---
     if not force_recompute and npz_path.exists():
@@ -48,7 +48,8 @@ def build_figure_4(
             d95_match_rep = data["d95_match_rep"].tolist()
             label_D = str(data["label_D"])
             if int(data["d_max"]) != d_max:
-                 print(f"[Warning] Cached d_max ({data['d_max']}) != requested ({d_max})")
+                 print(f"[Warning] Cached d_max ({data['d_max']}) != requested ({d_max}). Using cached value for plotting.")
+                 d_max = int(data["d_max"])
 
         png_path = npz_path.with_suffix(".png")
         SemedoFigures.plot_figure_4(
@@ -61,7 +62,7 @@ def build_figure_4(
         return
 
     # --- 1. Load Data ---
-    trials = runtime.get_data_manager()._load_trials()
+    trials = runtime.data_manager._load_trials()
     groups, label_D, id_print, rep_arr = build_groups_by_rep_or_subsets(
         trials, k_subsets=k_subsets, random_state=random_state
     )
@@ -77,8 +78,8 @@ def build_figure_4(
         d_max=d_max, alpha=alpha, outer_splits=outer_splits, inner_splits=inner_splits, random_state=random_state
     )
 
-    d95_full_g  = d95_from_curves(perf_full ["rrr_R2_mean"], perf_full ["ridge_R2_mean"], d_max)
-    d95_match_g = d95_from_curves(perf_match["rrr_R2_mean"], perf_match["ridge_R2_mean"], d_max)
+    d95_full_g  = calc_d95(perf_full ["rrr_R2_mean"], perf_full ["ridge_R2_mean"], d_max)
+    d95_match_g = calc_d95(perf_match["rrr_R2_mean"], perf_match["ridge_R2_mean"], d_max)
 
     # --- 3. Per-Group Performance (Panel D) ---
     d95_full_rep, d95_match_rep = [], []
@@ -93,8 +94,8 @@ def build_figure_4(
             d_max=d_max, trial_subset=grp_idx, outer_splits=outer_splits, inner_splits=inner_splits, random_state=random_state
         )
         
-        df = d95_from_curves(res_f["rrr_R2_mean"], res_f["ridge_R2_mean"], d_max)
-        dm = d95_from_curves(res_m["rrr_R2_mean"], res_m["ridge_R2_mean"], d_max)
+        df = calc_d95(res_f["rrr_R2_mean"], res_f["ridge_R2_mean"], d_max)
+        dm = calc_d95(res_m["rrr_R2_mean"], res_m["ridge_R2_mean"], d_max)
         
         d95_full_rep.append(df)
         d95_match_rep.append(dm)

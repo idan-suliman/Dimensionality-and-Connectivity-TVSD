@@ -2,7 +2,8 @@ from __future__ import annotations
 import numpy as np
 from typing import Dict, Any
 from ..rrr import RRRAnalyzer
-from .stats import compute_lag_stats, compute_overlap_msc, d95_from_perf
+from ..rrr.metrics import calc_d95
+from .stats import compute_lag_stats, compute_overlap_msc
 
 def analyze_connection(analyzer, src_id: int, tgt_id: int, fixed_d: int | None = None) -> Dict[str, Any]:
     """
@@ -32,7 +33,7 @@ def analyze_connection(analyzer, src_id: int, tgt_id: int, fixed_d: int | None =
         )
         
         lam_opt = float(np.median(perf["lambdas"]))
-        d95 = d95_from_perf(perf["rrr_R2_mean"], perf["ridge_R2_mean"], d_max)
+        d95 = calc_d95(perf["rrr_R2_mean"], perf["ridge_R2_mean"], d_max)
         temp_d95s.append(d95)
         r2_per_block.append(perf["rrr_R2_mean"]) # Save full curve
         

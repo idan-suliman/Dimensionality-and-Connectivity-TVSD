@@ -5,6 +5,7 @@ from core.runtime import runtime
 from .analyzer import DimCorrAnalyzer
 from visualization import DimCorrVisualizer
 
+
 def run_standard_analysis(monkey: str, z_code: int, analysis_type: str, group_size: int = 3, force_recompute: bool = False, selection: List[int] | None = None):
     """
     Orchestrates the standard Dimensionality Correlation analysis:
@@ -49,10 +50,18 @@ def run_standard_analysis(monkey: str, z_code: int, analysis_type: str, group_si
         
     # Plotting
     # We need a Visualizer
-    # out_dir = runtime.get_config().get_out_path() / "FIGURES"
-    out_dir = runtime.get_cfg().get_plot_dir() / "DimCorr"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    fpath = out_dir / f"{monkey}_Z{z_code}_{analysis_type}_DimCorr.png"
+    # Collect IDs for filename
+    run_ids = [str(x["id"]) for x in to_run]
+    items_str = "-".join(run_ids)
+    
+    # Use get_dim_corr_path for summary plot path
+    fp = runtime.paths.get_dim_corr_path(
+        monkey,
+        analysis_type,
+        group_size,
+        suffix=f"_items_{items_str}_DimCorr",
+        extension=".png"
+    )
     
     DimCorrVisualizer.plot_curves(
         results_list=results, 

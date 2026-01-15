@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import spearmanr
 from . import utils
 
+
 def compute_overlap_msc(A: np.ndarray, B: np.ndarray) -> float:
     """
     Compute Mean Squared Cosine between two subspaces A and B.
@@ -14,11 +15,7 @@ def compute_overlap_msc(A: np.ndarray, B: np.ndarray) -> float:
     svals = np.linalg.svd(C, compute_uv=False)
     return float(np.mean(svals ** 2))
 
-def d95_from_perf(rrr_mean: np.ndarray, ridge_mean: float, d_max: int) -> int:
-    """Helper for Connective Analysis (Semedo d95 logic)."""
-    thr = 0.95 * float(ridge_mean)
-    idx = np.where(rrr_mean >= thr)[0]
-    return int(idx[0] + 1) if idx.size else int(d_max)
+
 
 def compute_lag_stats(analyzer, O: np.ndarray, n_perms: int = 2000) -> dict:
     """

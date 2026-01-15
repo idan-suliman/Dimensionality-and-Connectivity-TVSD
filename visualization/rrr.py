@@ -26,7 +26,7 @@ def plot_rrr_ridge_comparison(
     """
 
     if analysis_types is None:
-        analysis_types = runtime.get_consts().ANALYSIS_TYPES
+        analysis_types = runtime.consts.ANALYSIS_TYPES
 
     using_external = (_external_X is not None) and (_external_Ys is not None)
     cmap = {"window": "#C21807", "baseline100": "#1565C0", "residual": "#2E7D32"}
@@ -96,7 +96,7 @@ def plot_rrr_ridge_comparison(
     ax_main.set_ylabel(rf"Mean $R^2$  (CV: outer {outer_splits}, inner {inner_splits})")
     ax_main.grid(alpha=0.3)
 
-    tgt_lbl = runtime.get_consts().REGION_ID_TO_NAME.get(target_region, str(target_region))
+    tgt_lbl = runtime.consts.REGION_ID_TO_NAME.get(target_region, str(target_region))
     ax_main.set_title(custom_title or
                     f"V1 → {'V1-match '+tgt_lbl if match_to_target else tgt_lbl}",
                     fontsize=12, pad=10)
@@ -114,7 +114,7 @@ def plot_rrr_ridge_comparison(
     tag = "nestedLam" if alpha is None else f"lam{RRRAnalyzer._lambda_for_fname(alpha)}"
     plot_dir = RRRAnalyzer._plot_dir(match_to_target)
     
-    base = (f"{runtime.get_cfg().get_monkey_name().replace(' ', '')}_rrr_"
+    base = (f"{runtime.cfg.get_monkey_name().replace(' ', '')}_rrr_"
             f"{'target' if match_to_target else 'regular'}_"
             f"V1_to_{tgt_lbl}_{tag}")
             

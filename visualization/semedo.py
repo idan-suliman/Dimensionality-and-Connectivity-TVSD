@@ -5,7 +5,7 @@ from matplotlib import gridspec
 import matplotlib.patheffects as pe
 from pathlib import Path
 from core.runtime import runtime
-from .utils import d95_from_curves, jitter, square_limits, labeled_dot, smart_label
+from .utils import jitter, square_limits, labeled_dot, smart_label
 
 class SemedoFigures:
     """
@@ -42,7 +42,7 @@ class SemedoFigures:
         axD = fig.add_subplot(gs[1, 1])
 
         dims   = np.arange(1, d_max + 1)
-        tgt    = runtime.get_consts().REGION_ID_TO_NAME[target_region]
+        tgt    = runtime.consts.REGION_ID_TO_NAME[target_region]
         colA, colB = "#9C1C1C", "#1565C0"
         label_fs = 20
 
@@ -151,7 +151,7 @@ class SemedoFigures:
         
         top_row_ymax = max(boxA.y1, boxC.y1)
         fig.suptitle(
-            f"{runtime.get_cfg().get_monkey_name()}  |  {runtime.get_cfg().get_zscore_title()}  |  {analysis_type.upper()}",
+            f"{runtime.cfg.get_monkey_name()}  |  {runtime.cfg.get_zscore_title()}  |  {analysis_type.upper()}",
             fontsize=20, y=min(0.998, top_row_ymax + 0.080), fontweight="bold"
         )
 
@@ -186,8 +186,8 @@ class SemedoFigures:
         save_path: str | None = None,
     ) -> None:
         """Plot the Multi-Run Subset Figure 4."""
-        cfg = runtime.get_cfg()
-        tgt_nm = runtime.get_consts().REGION_ID_TO_NAME[target_region]
+        cfg = runtime.cfg
+        tgt_nm = runtime.consts.REGION_ID_TO_NAME[target_region]
 
         fig = plt.figure(figsize=(14, 13), dpi=400)
         fig.subplots_adjust(left=0.10, right=0.97, top=0.90, bottom=0.12, wspace=0.15, hspace=0.30)

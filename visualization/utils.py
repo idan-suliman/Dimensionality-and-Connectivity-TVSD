@@ -2,14 +2,7 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.patheffects as pe
 
-def d95_from_curves(rrr_mean: np.ndarray, ridge_mean: float, d_max: int) -> int:
-    """
-    Compute minimal dimension d such that RRR(d) >= 0.95 * Ridge_R^2.
-    Returns d_max if 95% threshold is not reached.
-    """
-    thr = 0.95 * float(ridge_mean)
-    idx = np.where(rrr_mean >= thr)[0]
-    return int(idx[0] + 1) if idx.size else int(d_max)
+
 
 def jitter(values, rng: np.random.Generator, *, scale: float = 0.15) -> np.ndarray:
     """
