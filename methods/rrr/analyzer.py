@@ -25,6 +25,10 @@ class RRRAnalyzer:
         return metrics.mv_r2(y_true, y_pred, is_poisson_proxy)
 
     @staticmethod
+    def calc_d95(rrr_mean: np.ndarray, ridge_mean: float, d_max: int) -> int:
+        return metrics.calc_d95(rrr_mean, ridge_mean, d_max)
+
+    @staticmethod
     def _lambda_grid(X, *, lam_range: tuple[float, float, int] | None = None,
                      shrink=None, scale=True):
         # We need default for shrink if not passed, but Python doesn't allow mutable default in signature easy reuse

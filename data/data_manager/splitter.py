@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from core import constants
+from core.runtime import runtime
 
 def get_repetition_matrices(
     manager,
@@ -33,7 +33,7 @@ def get_repetition_matrices(
     
     # 3. Split by Repetition
     mats = []
-    n_reps = constants.NUM_REPETITIONS
+    n_reps = runtime.consts.NUM_REPETITIONS
     
     for r in range(n_reps):
         ridx = np.flatnonzero(rep_indices == r)

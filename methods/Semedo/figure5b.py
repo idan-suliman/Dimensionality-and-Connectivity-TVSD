@@ -5,7 +5,6 @@ import csv
 from core.runtime import runtime
 from ..rrr import RRRAnalyzer
 from visualization import SemedoFigures
-from ..rrr.metrics import calc_d95
 from ..pca import RegionPCA
 
 
@@ -142,10 +141,10 @@ def build_semedo_figure_5_b(
         alpha=alpha, outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+444
     )
 
-    full_y_v4 = calc_d95(full_res_v4["rrr_R2_mean"], full_res_v4["ridge_R2_mean"], int(min(X_v1_minus_v4_full.shape[1], V4_full.shape[1], 512)))
-    full_y_v1v4 = calc_d95(full_res_v1v4["rrr_R2_mean"], full_res_v1v4["ridge_R2_mean"], int(min(X_v1_minus_v4_full.shape[1], V1_full.shape[1], 512)))
-    full_y_it = calc_d95(full_res_it["rrr_R2_mean"], full_res_it["ridge_R2_mean"], int(min(X_v1_minus_it_full.shape[1], IT_full.shape[1], 512)))
-    full_y_v1it = calc_d95(full_res_v1it["rrr_R2_mean"], full_res_v1it["ridge_R2_mean"], int(min(X_v1_minus_it_full.shape[1], V1_full.shape[1], 512)))
+    full_y_v4 = RRRAnalyzer.calc_d95(full_res_v4["rrr_R2_mean"], full_res_v4["ridge_R2_mean"], int(min(X_v1_minus_v4_full.shape[1], V4_full.shape[1], 512)))
+    full_y_v1v4 = RRRAnalyzer.calc_d95(full_res_v1v4["rrr_R2_mean"], full_res_v1v4["ridge_R2_mean"], int(min(X_v1_minus_v4_full.shape[1], V1_full.shape[1], 512)))
+    full_y_it = RRRAnalyzer.calc_d95(full_res_it["rrr_R2_mean"], full_res_it["ridge_R2_mean"], int(min(X_v1_minus_it_full.shape[1], IT_full.shape[1], 512)))
+    full_y_v1it = RRRAnalyzer.calc_d95(full_res_v1it["rrr_R2_mean"], full_res_v1it["ridge_R2_mean"], int(min(X_v1_minus_it_full.shape[1], V1_full.shape[1], 512)))
 
     full_points = {
         "V4":             (full_x_v4, full_y_v4),
@@ -183,7 +182,7 @@ def build_semedo_figure_5_b(
 
         # RRR
         dm_v4 = int(min(X_v1_minus_v4.shape[1], Y_v4.shape[1], 512))
-        y_v4 = calc_d95(
+        y_v4 = RRRAnalyzer.calc_d95(
             RRRAnalyzer._performance_from_mats(
                 Y_v4, X_v1_minus_v4, d_max=dm_v4, alpha=alpha, 
                 outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i
@@ -196,7 +195,7 @@ def build_semedo_figure_5_b(
         )
 
         dm_v1v4 = int(min(X_v1_minus_v4.shape[1], Y_v1_sub_v4.shape[1], 512))
-        y_v1v4 = calc_d95(
+        y_v1v4 = RRRAnalyzer.calc_d95(
             RRRAnalyzer._performance_from_mats(
                 Y_v1_sub_v4, X_v1_minus_v4, d_max=dm_v1v4, alpha=alpha,
                 outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i+1
@@ -209,7 +208,7 @@ def build_semedo_figure_5_b(
         )
 
         dm_it = int(min(X_v1_minus_it.shape[1], Y_it.shape[1], 512))
-        y_it = calc_d95(
+        y_it = RRRAnalyzer.calc_d95(
             RRRAnalyzer._performance_from_mats(
                 Y_it, X_v1_minus_it, d_max=dm_it, alpha=alpha,
                 outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i+2
@@ -222,7 +221,7 @@ def build_semedo_figure_5_b(
         )
 
         dm_v1it = int(min(X_v1_minus_it.shape[1], Y_v1_sub_it.shape[1], 512))
-        y_v1it = calc_d95(
+        y_v1it = RRRAnalyzer.calc_d95(
             RRRAnalyzer._performance_from_mats(
                 Y_v1_sub_it, X_v1_minus_it, d_max=dm_v1it, alpha=alpha,
                 outer_splits=outer_splits, inner_splits=inner_splits, random_state=seed+10*i+3

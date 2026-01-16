@@ -147,5 +147,12 @@ Per-electrode statistics showed **near-zero STD across trials**, indicating no m
 
 **Action taken**
 - Excluded these electrodes from analysis.  
-- Updated both **mapping logic** and **raw/processed arrays** to preserve **1:1 logical–physical structure** after removal.  
 - All downstream steps (A–D, dim/RRR) use the **filtered** set with consistent indexing.
+
+---
+
+## Codebase Structure Diagram (Detailed)
+
+Below is an extended view of the project structure, illustrating the relationships between drivers, core modules, data management, and analysis methods.
+
+![Detailed Architecture](images_for_readme/Diagram_with_arrows.png)

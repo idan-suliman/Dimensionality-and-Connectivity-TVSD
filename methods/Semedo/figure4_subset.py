@@ -5,8 +5,6 @@ from datetime import datetime
 import time
 from ..rrr import RRRAnalyzer
 from visualization import SemedoFigures
-from ..rrr.metrics import calc_d95
-
 from .matching import match_subset_from_prebuilt
 
 
@@ -151,8 +149,8 @@ def build_figure_4_subset(
             outer_splits=outer_splits, inner_splits=inner_splits, random_state=random_state+run_idx
         )
         
-        d95_f = int(calc_d95(res_full["rrr_R2_mean"], res_full["ridge_R2_mean"], d_max))
-        d95_m = int(calc_d95(res_match["rrr_R2_mean"], res_match["ridge_R2_mean"], d_max))
+        d95_f = int(RRRAnalyzer.calc_d95(res_full["rrr_R2_mean"], res_full["ridge_R2_mean"], d_max))
+        d95_m = int(RRRAnalyzer.calc_d95(res_match["rrr_R2_mean"], res_match["ridge_R2_mean"], d_max))
         d95_full_runs.append(d95_f)
         d95_match_runs.append(d95_m)
         
@@ -174,7 +172,7 @@ def build_figure_4_subset(
         for g_idx in groups:
             Y_sub, X_sub = Y_match[g_idx, :], X_match[g_idx, :]
             
-            d_f = int(calc_d95(
+            d_f = int(RRRAnalyzer.calc_d95(
                 RRRAnalyzer._performance_from_mats(
                     Y_full[g_idx,:], X_full[g_idx,:], d_max=d_max, alpha=alpha, 
                     outer_splits=outer_splits, inner_splits=inner_splits, random_state=random_state+run_idx
@@ -186,7 +184,7 @@ def build_figure_4_subset(
                 d_max
             ))
             
-            d_m = int(calc_d95(
+            d_m = int(RRRAnalyzer.calc_d95(
                 RRRAnalyzer._performance_from_mats(
                     Y_sub, X_sub, d_max=d_max, alpha=alpha, 
                     outer_splits=outer_splits, inner_splits=inner_splits, random_state=random_state+run_idx

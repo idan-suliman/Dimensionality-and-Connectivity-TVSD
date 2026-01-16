@@ -3,7 +3,6 @@ import numpy as np
 from core.runtime import runtime
 from ..rrr import RRRAnalyzer
 from visualization import SemedoFigures
-from ..rrr.metrics import calc_d95
 from .utils import build_groups_by_rep_or_subsets
 
 def build_figure_4(
@@ -78,8 +77,8 @@ def build_figure_4(
         d_max=d_max, alpha=alpha, outer_splits=outer_splits, inner_splits=inner_splits, random_state=random_state
     )
 
-    d95_full_g  = calc_d95(perf_full ["rrr_R2_mean"], perf_full ["ridge_R2_mean"], d_max)
-    d95_match_g = calc_d95(perf_match["rrr_R2_mean"], perf_match["ridge_R2_mean"], d_max)
+    d95_full_g  = RRRAnalyzer.calc_d95(perf_full ["rrr_R2_mean"], perf_full ["ridge_R2_mean"], d_max)
+    d95_match_g = RRRAnalyzer.calc_d95(perf_match["rrr_R2_mean"], perf_match["ridge_R2_mean"], d_max)
 
     # --- 3. Per-Group Performance (Panel D) ---
     d95_full_rep, d95_match_rep = [], []
@@ -94,8 +93,8 @@ def build_figure_4(
             d_max=d_max, trial_subset=grp_idx, outer_splits=outer_splits, inner_splits=inner_splits, random_state=random_state
         )
         
-        df = calc_d95(res_f["rrr_R2_mean"], res_f["ridge_R2_mean"], d_max)
-        dm = calc_d95(res_m["rrr_R2_mean"], res_m["ridge_R2_mean"], d_max)
+        df = RRRAnalyzer.calc_d95(res_f["rrr_R2_mean"], res_f["ridge_R2_mean"], d_max)
+        dm = RRRAnalyzer.calc_d95(res_m["rrr_R2_mean"], res_m["ridge_R2_mean"], d_max)
         
         d95_full_rep.append(df)
         d95_match_rep.append(dm)
