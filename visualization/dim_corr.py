@@ -61,8 +61,8 @@ class DimCorrVisualizer:
                            color=color, s=50, edgecolors='k', zorder=5, 
                            label=None) # Don't duplicate label
                            
-        ax.set_xlabel("Number of Dimensions (Cumulative)", fontsize=16, fontweight='bold')
-        ax.set_ylabel("Spearman Correlation", fontsize=16, fontweight='bold')
+        ax.set_xlabel("Number of Dimensions (Cumulative)", fontsize=30)
+        ax.set_ylabel("Spearman Correlation", fontsize=30)
         ax.set_xlim(left=0) # Force X-axis start at 0
 
         
@@ -77,11 +77,11 @@ class DimCorrVisualizer:
         
         ax.grid(True, linestyle='--', alpha=0.5)
         ax.axhline(0, color='gray', linestyle='-', linewidth=0.8)
-        ax.tick_params(axis='both', which='major', labelsize=14, width=2)
+        ax.tick_params(axis='both', which='major', labelsize=20, width=2)
         
         # Legend: Outside, Centered, Large
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), 
-                 ncol=3, fontsize=14, frameon=False)
+                 ncol=3, fontsize=20, frameon=False)
         
         # Save
         p = Path(output_path)
