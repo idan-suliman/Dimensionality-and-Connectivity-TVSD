@@ -27,17 +27,27 @@ class DimCorrVisualizer:
             pvals = np.array(res["p_vals"])
             
             # Label generation
-            if res["type"] == "region":
-                if "src" in res:
-                    lbl = res["src"]
-                else:
-                    try:
-                        name = runtime.consts.REGION_ID_TO_NAME[res['id']]
-                        lbl = name
-                    except:
-                        lbl = f"Region {res['id']}"
-            else:
-                lbl = f"{res['src']}->{res['tgt']}"
+            # Extract metadata
+            meta = res.get("meta", {})
+            rtype = res.get("type", meta.get("type"))
+            
+            # Label generation
+            if "label" in res:
+                lbl = res["label"]
+            elif "plot_label" in res:
+                lbl = res["plot_label"]
+            elif rtype == "region" or rtype == "intrinsic":
+                rid = res.get("region", meta.get("region"))
+                # Try getting name
+                try:
+                    name = runtime.consts.REGION_ID_TO_NAME[int(rid)]
+                    lbl = name
+                except:
+                    lbl = f"Region {rid}"
+            else: # predictive / connection
+                src = res.get("src", meta.get("src"))
+                tgt = res.get("tgt", meta.get("tgt"))
+                lbl = rf"{src} $\rightarrow$ {tgt}"
                 
             color = colors[idx]
             
@@ -53,13 +63,15 @@ class DimCorrVisualizer:
                            
         ax.set_xlabel("Number of Dimensions (Cumulative)", fontsize=16, fontweight='bold')
         ax.set_ylabel("Spearman Correlation", fontsize=16, fontweight='bold')
+        ax.set_xlim(left=0) # Force X-axis start at 0
+
         
         # Titles
         fig.suptitle(title, fontsize=20, fontweight='bold', y=0.96)
         ax.set_title(subtitle, fontsize=14, color='gray', pad=10)
         
         # Significance Annotation
-        ax.text(0.95, 0.95, "Bold points: Permutation p < 0.05", 
+        ax.text(0.95, 0.95, "Bold points: Permutation p < 0.01", 
                 transform=ax.transAxes, ha='right', va='top', fontsize=12,
                 bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.9))
         

@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 import copy
 from typing import Dict, Any, Optional, List
+from sklearn.linear_model import Ridge
 from core.runtime import runtime
 from ..pca import RegionPCA
 from ..rrr import RRRAnalyzer
@@ -24,7 +25,14 @@ def analyze_region_curve(analyzer, region_id: int, max_dims: int = 30,
     
     if not force_recompute and fpath.exists():
         print(f"[DimCorr] Loading {fpath.name}")
-        return np.load(fpath, allow_pickle=True)["result"].item()
+        with np.load(fpath, allow_pickle=True) as data:
+            if "result" in data:
+                return data["result"].item()
+            else:
+                res = {k: data[k] for k in data.files}
+                if "meta" in res and res["meta"].ndim == 0:
+                     res["meta"] = res["meta"].item()
+                return res
 
     print(f"[DimCorr] Computing Curve for Region {region_id}...")
     
@@ -115,7 +123,14 @@ def analyze_connection_curve(analyzer, src_id: int, tgt_id: int, max_dims: int =
     
     if not force_recompute and fpath.exists():
         print(f"[DimCorr] Loading {fpath.name}")
-        return np.load(fpath, allow_pickle=True)["result"].item()
+        with np.load(fpath, allow_pickle=True) as data:
+             if "result" in data:
+                 return data["result"].item()
+             else:
+                 res = {k: data[k] for k in data.files}
+                 if "meta" in res and res["meta"].ndim == 0:
+                     res["meta"] = res["meta"].item()
+                 return res
 
     print(f"[DimCorr] Computing Curve for {src_id}->{tgt_id}...")
 
@@ -143,25 +158,37 @@ def analyze_connection_curve(analyzer, src_id: int, tgt_id: int, max_dims: int =
         X = src_blocks[i]
         Y = tgt_blocks[i]
         
-        # Center
+        # User Logic: Manual B-Ridge calculation using compute_performance for lambda
+        # Center data
         X_c = X - X.mean(0)
         Y_c = Y - Y.mean(0)
         
-        # Ridge Solution
-        # Use RRRAnalyzer's auto_alpha to select lambda if not provided
-        # (Matches the standard RRR logic)
-        alpha_val = RRRAnalyzer.auto_alpha(X_c, Y_c, inner_splits=None, random_state=0)
-        ridge = Ridge(alpha=alpha_val)
-        ridge.fit(X_c, Y_c)
-        Y_pred = ridge.predict(X_c)
+        # CV-RRR to find lambda and performance
+        # Using RRRAnalyzer.compute_performance to match 'old code' exact logic for lam_opt
+        # Note: We need d_max for compute_performance, even if we just want lambda.
+        # We'll use 50 as in the user snippet, or max_dims if larger.
+        d_search = max(50, max_dims) 
         
+        perf = RRRAnalyzer.compute_performance(
+            Y, X, d_max=d_search, outer_splits=None, inner_splits=None,
+            alpha=None, random_state=42 + i
+        )
         
-        # SVD of predicted
-        pca = RegionPCA(centered=False).fit(Y_pred)
-        Vt = pca.eigenvectors_
-        # Y_pred is (Samples, Neurons). Subspace in neural state space.
+        # Use median lambda from folds
+        lam_opt = float(np.median(perf["lambdas"]))
         
-        bases_dict[i] = Vt.T # (Neurons, Neurons) full rank ordered by variance.
+        # B = (X'X + lam*I)^-1 X'Y
+        cov_xx = X_c.T @ X_c
+        cov_xy = X_c.T @ Y_c
+        reg_eye = lam_opt * np.eye(X_c.shape[1])
+        B_ridge = np.linalg.solve(cov_xx + reg_eye, cov_xy)
+        
+        # Extract Predictive Subspace
+        # SVD of B gives directions in X (Source Predictive Subspace)
+        U, S, Vt = np.linalg.svd(B_ridge, full_matrices=False)
+        
+        # Bases are columns of U
+        bases_dict[i] = U
 
     for d in range(1, max_dims + 1):
         if d > bases_dict[0].shape[1]: 
