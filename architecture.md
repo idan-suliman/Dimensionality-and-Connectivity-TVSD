@@ -22,6 +22,11 @@ This document outlines the structure of the refactored TVSD codebase. The system
     *   `MONKEYS`, `ZSCORE_INFO`, `REGION_ID_TO_NAME`.
     *   Analysis parameters like `ANALYSIS_TYPES`.
 
+### `core.paths`
+*   **Purpose**: Centralized path generation and management. Accessed via `runtime.paths`.
+*   **Key Components**:
+    *   `Paths` class: Generates consistent file paths for data, plots, and analysis outputs.
+
 ---
 
 ## 2. `data/` Package (Data Management)
@@ -97,9 +102,7 @@ This document outlines the structure of the refactored TVSD codebase. The system
  ### `visualization.dim_corr`
  *   **Purpose**: Dimensionality vs Stability correlation plots.
  
- ### `visualization.general`
- *   **Purpose**: General-purpose plotting utilities (histograms, rasters, etc.).
- 
+
  ### `visualization.utils`
  *   **Purpose**: Shared plotting helpers (e.g., `jitter`, `smart_label`).
  
