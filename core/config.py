@@ -106,42 +106,8 @@ class CONFIG:
             return rois
 
     # ------ Output directory helpers (create-on-demand) ------
+    # (Moved to core/paths.py)
 
-    def get_plot_dir(self):
-        """Return <data_path>/PLOTS; create if requested."""
-        p = self.data_path / constants.DIR_PLOTS
-        p.mkdir(parents=True, exist_ok=True)
-        return p
-
-    def get_target_rrr_dir(self, create: bool = True) -> Path:
-        """Return <data_path>/TARGET_RRR; create if requested."""
-        p = self.data_path / constants.DIR_TARGET_RRR
-        if create:
-            p.mkdir(parents=True, exist_ok=True)
-        return p
-
-    def get_regular_rrr_dir(self, create: bool = True) -> Path:
-        """Return <data_path>/REGULAR_RRR; create if requested."""
-        p = self.data_path / constants.DIR_REGULAR_RRR
-        if create:
-            p.mkdir(parents=True, exist_ok=True)
-        return p
-
-    def get_compare_rrr_dir(self, create: bool = True) -> Path:
-        """Return <data_path>/COMPARE_RRR; create if requested."""
-        p = self.data_path / constants.DIR_COMPARE_RRR
-        if create:
-            p.mkdir(parents=True, exist_ok=True)
-        return p
-
-    def all_output_dirs(self, create: bool = True) -> Dict[str, Path]:
-        """Return a dict of all common output directories under the active data path."""
-        return {
-            "plots": self.get_plot_dir(create=create),
-            "target_rrr": self.get_target_rrr_dir(create=create),
-            "regular_rrr": self.get_regular_rrr_dir(create=create),
-            "compare_rrr": self.get_compare_rrr_dir(create=create),
-        }
     
 
     

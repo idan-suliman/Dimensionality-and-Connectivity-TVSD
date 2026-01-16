@@ -8,9 +8,9 @@ def _plot_dir(match_to_target: bool = True) -> Path:
     Return <data_path>/TARGET_RRR (if match_to_target) or <data_path>/REGULAR_RRR.
     Creates the directory if it doesn't exist.
     """
-    d = runtime.cfg.get_regular_rrr_dir()
+    d = runtime.paths.get_regular_rrr_dir()
     if match_to_target:
-        d = runtime.cfg.get_target_rrr_dir()
+        d = runtime.paths.get_target_rrr_dir()
     d.mkdir(parents=True, exist_ok=True)
     return d
 

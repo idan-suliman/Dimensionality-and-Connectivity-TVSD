@@ -34,16 +34,22 @@ class Paths:
         return self.cfg.get_data_path()
 
     def get_plot_dir(self, create: bool = True) -> Path:
-        return self.cfg.get_plot_dir()
+        p = self.cfg.get_data_path() / self.consts.DIR_PLOTS
+        if create:
+            p.mkdir(parents=True, exist_ok=True)
+        return p
     
     def get_target_rrr_dir(self, create: bool = True) -> Path:
-        return self.cfg.get_target_rrr_dir(create=create)
+        p = self.cfg.get_data_path() / self.consts.DIR_TARGET_RRR
+        if create:
+            p.mkdir(parents=True, exist_ok=True)
+        return p
 
     def get_regular_rrr_dir(self, create: bool = True) -> Path:
-        return self.cfg.get_regular_rrr_dir(create=create)
-
-    def get_compare_rrr_dir(self, create: bool = True) -> Path:
-        return self.cfg.get_compare_rrr_dir(create=create)
+        p = self.cfg.get_data_path() / self.consts.DIR_REGULAR_RRR
+        if create:
+            p.mkdir(parents=True, exist_ok=True)
+        return p
 
     # =========================================================================
     # Dimensionality Correlation
