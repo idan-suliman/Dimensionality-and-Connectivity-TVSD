@@ -14,8 +14,8 @@ def build_semedo_figure_5_b(
     analysis_type: str = "residual",
     num_sets: int = 10,
     seed: int = 0,
-    outer_splits: int = 3,
-    inner_splits: int = 3,
+    outer_splits: int | None = None,
+    inner_splits: int | None = None,
     alpha: float | None = None,
     threshold: float = 0.95,
     verbose: bool = True,
@@ -31,6 +31,10 @@ def build_semedo_figure_5_b(
     consts = runtime.consts
     cfg    = runtime.cfg
     dm     = runtime.data_manager
+
+    # Resolve user defaults
+    if outer_splits is None: outer_splits = cfg.cv_outer_splits
+    if inner_splits is None: inner_splits = cfg.cv_inner_splits
     
     # Get default path from runtime
     fig_path = runtime.paths.get_semedo_figure_path("Figure_5_B", analysis_type, num_sets=num_sets)

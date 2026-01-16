@@ -28,7 +28,8 @@ def _load_mapping(monkey_name: str) -> np.ndarray:
 class CONFIG:
     """Stateless configuration facade wrapping validation, path resolution, and directory helpers."""
 
-    def __init__(self, monkey_name: str, zscore_index: int):
+    def __init__(self, monkey_name: str, zscore_index: int, 
+                 cv_outer_splits: int = None, cv_inner_splits: int = None, n_permutations: int = None):
         """
         Validate inputs, resolve data_path, pick the ROI vector, load the mapping,
         and return a TVSDRuntime object. Exactly mirrors legacy side-effects, but
@@ -55,6 +56,11 @@ class CONFIG:
         self.need_mapping= True if monkey_name == constants.MONKEY_F else False
         self.mapping=mapping
 
+        # Analysis Parameters (Centralized)
+        self.cv_outer_splits = cv_outer_splits if cv_outer_splits is not None else constants.DEFAULT_CV_OUTER_SPLITS
+        self.cv_inner_splits = cv_inner_splits if cv_inner_splits is not None else constants.DEFAULT_CV_INNER_SPLITS
+        self.n_permutations  = n_permutations  if n_permutations  is not None else constants.DEFAULT_N_PERMS
+
         # tmp
         self.main_data_file_path= self.data_path / constants.MAIN_DATA_FILES[self.zscore_code]
 
@@ -80,6 +86,15 @@ class CONFIG:
     
     def get_main_data_file_path(self):
         return self.main_data_file_path
+
+    def get_cv_outer_splits(self):
+        return self.cv_outer_splits
+
+    def get_cv_inner_splits(self):
+        return self.cv_inner_splits
+
+    def get_n_permutations(self):
+        return self.n_permutations
 
 
     # ---- utilities ----

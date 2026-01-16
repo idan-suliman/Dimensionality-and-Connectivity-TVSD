@@ -31,11 +31,11 @@ class RRRAnalyzer:
     @staticmethod
     def _lambda_grid(X, *, lam_range: tuple[float, float, int] | None = None,
                      shrink=None, scale=True):
-        # We need default for shrink if not passed, but Python doesn't allow mutable default in signature easy reuse
+        # Default shrink if not passed
         return optimization._lambda_grid(X, lam_range=lam_range, shrink=shrink, scale=scale)
 
     @staticmethod
-    def auto_alpha(X, Y, inner_splits: int = 10, random_state: int = 0,
+    def auto_alpha(X, Y, inner_splits: int | None = None, random_state: int = 0,
                     lam_range: tuple[float, float, int] | None = None,
                     is_poisson_proxy: bool = False):
         return optimization.auto_alpha(X, Y, inner_splits, random_state, lam_range, is_poisson_proxy)
@@ -47,7 +47,7 @@ class RRRAnalyzer:
     @staticmethod
     def compute_performance(Y, X, *, d_max: int,
                              alpha: float | None,
-                             outer_splits: int, inner_splits: int,
+                             outer_splits: int | None = None, inner_splits: int | None = None,
                              random_state: int,
                              lam_range: tuple[float, float, int] | None = None,
                              is_poisson_proxy: bool = False) -> Dict[str, Any]:
@@ -62,7 +62,7 @@ class RRRAnalyzer:
     @staticmethod
     def performance(source_region: int, target_region: int,
                     *, d_max: int = 30, alpha: float | None = None,
-                    outer_splits: int = 10, inner_splits: int = 10,
+                    outer_splits: int | None = None, inner_splits: int | None = None,
                     random_state: int = 0, analysis_type: str = "window",
                     match_to_target: bool = False,
                     trials: Optional[Sequence[int]] = None,

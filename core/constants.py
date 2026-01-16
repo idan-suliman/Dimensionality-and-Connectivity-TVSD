@@ -19,9 +19,7 @@ LOGICAL_TO_PHYSICAL_MAPPING_FILENAME: Final[str] = "1024chns_mapping_20220105.ma
 
 # ========= Dataset meta =========
 NUM_CHANNELS: Final[int] = 1024              # Total electrodes in the array
-TRIAL_LENGTH_MS: Final[int] = 300            # Number of time points per trial (0..299)
 NUM_REPETITIONS: Final[int] = 30             # Repetitions per stimulus
-TRIALS_PER_REPETITION: Final[int] = 100      # Stimuli per repetition
 
 # ========= Z-Score modes and folder names =========
 # Map: code -> (human-readable name, folder name)
@@ -45,7 +43,7 @@ MAIN_DATA_FILES: Dict[int, str] = {
 REGION_ID_TO_NAME: Dict[int, str] = {1: "V1", 2: "V4", 3: "IT"}
 REGION_NAME_TO_ID: Dict[str, int] = {v: k for k, v in REGION_ID_TO_NAME.items()}
 
-# Time windows (inclusive start, exclusive end) in 0..TRIAL_LENGTH_MS
+# Time windows (inclusive start, exclusive end)
 REGION_WINDOWS: Dict[int, Tuple[int, int]] = {
     1: (125, 225),  # V1
     2: (150, 250),  # V4
@@ -53,7 +51,7 @@ REGION_WINDOWS: Dict[int, Tuple[int, int]] = {
 }
 
 # ========= Physical ROI maps (length 1024) by monkey =========
-# Values: 1=V1, 2=V4, 3=IT; edit here if you refine the physical allocation.
+# Values: 1=V1, 2=V4, 3=IT
 def build_rois_from_physical_by_monkey() -> Dict[str, np.ndarray]:
     def physical_rois_monkey_n() -> Dict[str, np.ndarray]:
         rois = np.zeros(NUM_CHANNELS, dtype=int)
@@ -86,27 +84,9 @@ DIR_COMPARE_RRR: Final[str] = "COMPARE_RRR"
 # ========= Analysis types =========
 ANALYSIS_TYPES: Tuple[str, ...] = ("window", "baseline100", "residual")
 
-# ========= Plot colors =========
-# Keep a single source of truth for palette across the project.
-ANALYSIS_COLORS = {
-    "window":      "#C21807",
-    "baseline100": "#1565C0",
-    "residual":    "#2E7D32",
-}
-REGION_PLOT_COLORS = {
-    "V1": "tab:red",
-    "V4": "tab:blue",
-    "IT": "tab:green",
-}
-GLOBAL_BAR_COLORS = {
-    MONKEY_F: "steelblue",
-    MONKEY_N: "orange",
-}
 
-# ========= Defaults for RRR / CV pipelines =========
-RRR_DEFAULTS = dict(
-    D_MAX=35,          # Maximum rank to scan
-    OUTER_SPLITS=3,   # Outer CV folds
-    INNER_SPLITS=3,   # Inner CV folds for model selection
-    RANDOM_STATE=0,    # Reproducibility
-)
+
+# Default Analysis Parameters
+DEFAULT_CV_OUTER_SPLITS = 3
+DEFAULT_CV_INNER_SPLITS = 3
+DEFAULT_N_PERMS = 2500

@@ -155,25 +155,17 @@ def plot_repetition_stability(
         p.mkdir(parents=True, exist_ok=True)
         # Construct filename from first result metadata
         r0 = results[0]
-        # Construct path using new helper
-        # We need to map dict keys back to function args
+        # Construct filename using helper
         fname = runtime.paths.get_rep_stability_path(
-            output_dir="", # name only, handled by p / fname below? No, helper joins path. 
-                           # Helper returns Path object. 
-                           # But here out_dir is passed to plot function. 
-                           # Helper takes output_dir.
+            output_dir="",
             monkey_name=r0["monkey"],
-            analysis_type=r0["method"], # result key is "method"
+            analysis_type=r0["method"], 
             group_size=r0["block_size"],
-            # Check if it's region or connection
             region_id=int(r0["region_id"]) if r0["type"] == "region" else None,
             src_tgt=(int(r0["src_id"]), int(r0["tgt_id"])) if r0["type"] == "connection" else None,
             extension=".png"
-        ).name # We just want the name here to join with 'p' (out_dir) OR we use function fully.
-        
-        # If we use the function fully:
-        # full_path = get_rep_stability_path(out_dir, ...)
-        
+        ).name 
+
         full_path = runtime.paths.get_rep_stability_path(
             output_dir=out_dir,
             monkey_name=r0["monkey"],

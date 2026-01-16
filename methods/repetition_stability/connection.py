@@ -18,16 +18,15 @@ def analyze_connection(analyzer, src_id: int, tgt_id: int, fixed_d: int | None =
     temp_d95s = []
     
     # RRR Configuration
-    d_max = 50 # User requested at least 50 components for reuse
+    d_max = 50 # Use at least 50 components
     
     # 1. Process Blocks (Train RRR + Extract Subspace)
     for i in range(n_blocks):
         X, Y = X_blocks[i], Y_blocks[i]
         
         # CV-RRR to find lambda and performance
-        # Utilizing existing project infrastructure
         perf = RRRAnalyzer.compute_performance(
-            Y, X, d_max=d_max, outer_splits=3, inner_splits=3,
+            Y, X, d_max=d_max, outer_splits=None, inner_splits=None,
             alpha=None, random_state=42 + i
         )
         

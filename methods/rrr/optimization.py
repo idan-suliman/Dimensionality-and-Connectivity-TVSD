@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import ShuffleSplit
 from . import metrics
+from core.runtime import runtime
 
 def _lambda_grid(X, *, lam_range: tuple[float, float, int] | None = None,
                  shrink=None, scale=True):
@@ -26,10 +27,13 @@ def _lambda_grid(X, *, lam_range: tuple[float, float, int] | None = None,
     eig_part = (d[:, None] / (d[:, None] + lam_vec[None, :])).sum(0)
     return lam_vec.astype(float), eig_part
 
-def auto_alpha(X, Y, inner_splits: int = 10, random_state: int = 0,
+def auto_alpha(X, Y, inner_splits: int | None = None, random_state: int = 0,
                 lam_range: tuple[float, float, int] | None = None,
                 is_poisson_proxy: bool = False):
     """Find optimal Alpha (Lambda) via inner CV."""
+    if inner_splits is None:
+        inner_splits = runtime.cfg.cv_inner_splits
+
     lam_vec, _ = _lambda_grid(X, lam_range=lam_range)
 
     ss_inner = ShuffleSplit(n_splits=inner_splits, train_size=0.9, test_size=0.1, random_state=random_state)

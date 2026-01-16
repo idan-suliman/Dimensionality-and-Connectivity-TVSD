@@ -39,6 +39,7 @@ TVSD_CODE/
 ├─ core/                        # Infrastructure
 │  ├─ config.py                 # Paths & Monkey configurations
 │  ├─ constants.py              # Global analysis parameters
+│  ├─ paths.py                  # Centralized path resolution
 │  └─ runtime.py                # Global state manager
 │
 ├─ data/                        # Data Management

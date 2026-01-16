@@ -9,18 +9,21 @@ def compute_overlap_msc(A: np.ndarray, B: np.ndarray) -> float:
     Compute Mean Squared Cosine between two subspaces A and B.
     A, B: Orthonormal basis matrices (Features x D)
     """
-    # Ensure orthonormal (though PCA output should be)
-    # Using SVD on the "Interaction Matrix" (Ua.T @ Ub)
+    # Calculate SVD on interaction matrix
     C = A.T @ B
     svals = np.linalg.svd(C, compute_uv=False)
     return float(np.mean(svals ** 2))
 
 
 
-def compute_lag_stats(analyzer, O: np.ndarray, n_perms: int = 2000) -> dict:
+from core.runtime import runtime
+
+def compute_lag_stats(analyzer, O: np.ndarray, n_perms: int | None = None) -> dict:
     """
     Spearman Correlation (Lag vs Overlap) + Permutation Test.
     """
+    if n_perms is None:
+        n_perms = runtime.cfg.n_permutations
     xs, ys, _, _, _ = utils.extract_lag_data(O)
     
     if len(xs) < 2:

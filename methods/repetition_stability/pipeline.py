@@ -12,14 +12,7 @@ def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool
     4. Saves all results to disk.
     5. Generates and saves summary plots.
     """
-    # Local import to avoid top-level circular dependency with visualization
-    # We will need to update this import if visualization is also refactored. 
-    # For now, it might be methods.visualization.repetition_stability or similar. 
-    # But since we haven't refactored visualization yet, it is methods.visualization.
-    # Note: Refactoring Visualization is NEXT. So this import might break soon if we proceed linearly.
-    # However, if we assume the old visualization.py is still there (it is), it's fine. 
-    # But wait, we plan to refactor visualization too. 
-    # Ideally, we should import from the new structure if possible, or keep it dynamic.
+    # Local import
     from visualization import plot_repetition_stability
 
     # 1. Base Data Path

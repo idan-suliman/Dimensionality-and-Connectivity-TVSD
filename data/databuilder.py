@@ -33,7 +33,8 @@ class DataBuilder:
     @staticmethod
     def load_raw_data():
         """Loads the raw test trials from Z=1"""
-        raw_path = runtime.consts.BASE_DIR / runtime.cfg.get_monkey_name() / "1_without_z_score" / "test_trials_full_data.pkl"
+        from core import constants
+        raw_path = constants.BASE_DIR / runtime.cfg.get_monkey_name() / "1_without_z_score" / "test_trials_full_data.pkl"
 
         if not raw_path.exists():
             raise FileNotFoundError(f"Expected raw file not found: {raw_path}")
@@ -49,10 +50,10 @@ class DataBuilder:
         print("[🔧] Running original Z-score normalization...")
 
         cfg = runtime.cfg
-        consts = runtime.consts
+        from core import constants
 
-        region_map     = consts.REGION_ID_TO_NAME
-        region_windows = consts.REGION_WINDOWS
+        region_map     = constants.REGION_ID_TO_NAME
+        region_windows = constants.REGION_WINDOWS
         rois   = cfg.get_rois()
 
         output_pkl = cfg.get_main_data_file_path()
@@ -107,10 +108,10 @@ class DataBuilder:
         print("[🔧] Running global Z-score normalization across all days...")
 
         cfg     = runtime.cfg
-        consts  = runtime.consts
+        from core import constants
 
-        region_map     = consts.REGION_ID_TO_NAME
-        region_windows = consts.REGION_WINDOWS
+        region_map     = constants.REGION_ID_TO_NAME
+        region_windows = constants.REGION_WINDOWS
         rois   = cfg.get_rois()
 
         output_pkl = cfg.get_main_data_file_path()
@@ -158,17 +159,17 @@ class DataBuilder:
         print("[🔧] Running repetition-wise Z-score normalization...")
 
         cfg     = runtime.cfg
-        consts  = runtime.consts
+        from core import constants
 
-        region_map     = consts.REGION_ID_TO_NAME
-        region_windows = consts.REGION_WINDOWS
+        region_map     = constants.REGION_ID_TO_NAME
+        region_windows = constants.REGION_WINDOWS
         rois   = cfg.get_rois()
 
         output_pkl = cfg.get_main_data_file_path()
         output_csv = output_pkl.with_name("zscore_stats_by_electrode_repeat.csv")
 
         # --- group trials by repetition (0-based)
-        NUM_REPS = consts.NUM_REPETITIONS
+        NUM_REPS = constants.NUM_REPETITIONS
         rep_groups = {r: [] for r in range(NUM_REPS)}
         for tr in raw_data:
             rep = int(tr["allmat_row"][3]) - 1

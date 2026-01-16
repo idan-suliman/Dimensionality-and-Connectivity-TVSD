@@ -42,14 +42,10 @@ class RepetitionStabilityAnalyzer:
          return compute_overlap_msc(A, B)
 
     # Exposed for external use or subclass use
-    def _compute_lag_stats(self, O: np.ndarray, n_perms: int = 2000):
+    def _compute_lag_stats(self, O: np.ndarray, n_perms: int | None = None):
          return compute_lag_stats(self, O, n_perms)
          
     # Exposed for external use
-    def _get_subfolder_name(self):
-         # Helper to get subfolder name like in DimCorr
-         return f"Repetition_Stability"
-
     def analyze_region(self, region_id: int, fixed_d: int | None = None) -> Dict[str, Any]:
         return region.analyze_region(self, region_id, fixed_d)
 

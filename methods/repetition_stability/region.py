@@ -21,7 +21,7 @@ def analyze_region(analyzer, region_id: int, fixed_d: int | None = None) -> Dict
         pca = RegionPCA(centered=True).fit(X)
         d = pca.dimensionality
         dims.append(d)
-        # Store full components for now, truncate later based on common D
+        # Store full components, truncate later
         subspaces.append(pca.get_components()) 
         
     # 2. Determine Common D

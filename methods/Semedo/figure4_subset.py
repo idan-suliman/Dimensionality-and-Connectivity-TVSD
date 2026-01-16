@@ -25,8 +25,8 @@ def build_figure_4_subset(
     analysis_type : str  = "residual",
     d_max         : int  = 35,
     alpha         : float | None = None,
-    outer_splits  : int  = 3,
-    inner_splits  : int  = 3,
+    outer_splits  : int | None = None,
+    inner_splits  : int | None = None,
     random_state  : int  = 0,
     n_runs     : int = 5,
     n_src      : int = 113,
@@ -43,6 +43,10 @@ def build_figure_4_subset(
     
     cfg = runtime.cfg
     tgt_nm = runtime.consts.REGION_ID_TO_NAME[target_region]
+
+    # Resolve defaults
+    if outer_splits is None: outer_splits = cfg.cv_outer_splits
+    if inner_splits is None: inner_splits = cfg.cv_inner_splits
     
     # Determine effective counts first for filename
     rois = cfg.get_rois()

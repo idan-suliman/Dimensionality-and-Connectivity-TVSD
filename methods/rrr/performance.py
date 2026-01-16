@@ -6,16 +6,23 @@ from typing import Dict, Any, Optional, Sequence
 from . import optimization
 from . import metrics
 from . import matrices
+from ..pca import RegionPCA
+from core.runtime import runtime
 
 def compute_performance(Y, X, *, d_max: int,
                          alpha: float | None,
-                         outer_splits: int, inner_splits: int,
+                         outer_splits: int | None = None, inner_splits: int | None = None,
                          random_state: int,
                          lam_range: tuple[float, float, int] | None = None,
                          is_poisson_proxy: bool = False) -> Dict[str, Any]:
     """
     Run Nested Cross-Validation to evaluate RRR and Ridge performance.
     """
+    if outer_splits is None:
+        outer_splits = runtime.cfg.cv_outer_splits
+    if inner_splits is None:
+        inner_splits = runtime.cfg.cv_inner_splits
+
     kf_outer = ShuffleSplit(n_splits=outer_splits, train_size=0.9, test_size=0.1, random_state=random_state)
     
     ridge_scores  = np.zeros(outer_splits, np.float32)
@@ -44,7 +51,12 @@ def compute_performance(Y, X, *, d_max: int,
         # RRR Performance via OLS + SVD projection
         # B_ols = (X'X + lam*I)^-1 X'Y
         B_ols = np.linalg.solve(Xtr_c.T @ Xtr_c + lam_f*np.eye(Xtr_c.shape[1]), Xtr_c.T @ Ytr_c)
-        _, _, Vt = np.linalg.svd(Xtr_c @ B_ols, full_matrices=False)
+        
+        # Use RegionPCA instead of direct SVD
+        # Note: Xtr_c @ B_ols is already "centered" in the sense that Xtr_c is centered.
+        proj = Xtr_c @ B_ols
+        pca = RegionPCA(centered=False).fit(proj)
+        Vt = pca.eigenvectors_
         V = Vt.T
         for d in range(1, d_max + 1):
             Bd = B_ols @ V[:, :d] @ V[:, :d].T
@@ -60,7 +72,7 @@ def compute_performance(Y, X, *, d_max: int,
 
 def performance_wrapper(source_region: int, target_region: int,
                 *, d_max: int = 30, alpha: float | None = None,
-                outer_splits: int = 10, inner_splits: int = 10,
+                outer_splits: int | None = None, inner_splits: int | None = None,
                 random_state: int = 0, analysis_type: str = "window",
                 match_to_target: bool = False,
                 trials: Optional[Sequence[int]] = None,

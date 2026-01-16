@@ -15,10 +15,7 @@ def load_trials(manager):
         print(f"[!] Data file not found: {p}")
         print("[*] Attempting to auto-build data via DataBuilder...")
         try:
-            # We import DataBuilder inside the function to avoid circular imports if any
-            # Note: The original code did `from .databuilder import DataBuilder` inside the method.
-            # checks relative import - we are in data.data_manager pkg, databuilder is in data/
-            # so ..databuilder
+            # Import locally to avoid circular dependencies
             from ..databuilder import DataBuilder
             DataBuilder.build_if_missing()
         except Exception as e:

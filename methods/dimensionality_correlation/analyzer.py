@@ -17,8 +17,7 @@ class DimCorrAnalyzer:
         self.analysis_type = analysis_type
         self.group_size = group_size
         
-        # We wrap RepStab analyzer to reuse its data loading / pca / rrr logic
-        # Ideally we would reuse just the stateless logic, but for now we composition.
+        # Wraps RepStab analyzer to reuse logic
         self.rep_stab = RepetitionStabilityAnalyzer(
             monkey=monkey, 
             z_code=z_code, 
@@ -28,7 +27,6 @@ class DimCorrAnalyzer:
 
     def get_file_path(self, output_dir: str, region_id: int | None = None, src_tgt: Tuple[int, int] | None = None, suffix: str = "_dim_corr") -> Any:
         # Delegate to runtime.paths
-        # Note: We must respect the signature or default correctly.
         return runtime.paths.get_dim_corr_path(
             self.monkey,
             self.analysis_type,

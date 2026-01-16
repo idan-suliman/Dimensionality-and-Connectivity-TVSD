@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Sequence
-from core.runtime import runtime
+
 
 def build_trial_matrix(
     manager,
@@ -47,7 +47,8 @@ def build_trial_matrix(
     if at == "baseline100":
         win = slice(0, 100)
     else:
-        start, end = runtime.consts.REGION_WINDOWS[int(region_id)]
+        from core import constants
+        start, end = constants.REGION_WINDOWS[int(region_id)]
         win = slice(start, end)
 
     # Aggregate

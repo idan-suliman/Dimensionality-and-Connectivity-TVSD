@@ -55,7 +55,7 @@ def run_standard_analysis(monkey: str, z_code: int, analysis_type: str, group_si
     items_str = "-".join(run_ids)
     
     # Use get_dim_corr_path for summary plot path
-    fp = runtime.paths.get_dim_corr_path(
+    fpath = runtime.paths.get_dim_corr_path(
         monkey,
         analysis_type,
         group_size,

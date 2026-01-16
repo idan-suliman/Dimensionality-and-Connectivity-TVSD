@@ -67,20 +67,11 @@ class Paths:
         if output_dir is None:
             output_dir = self.get_data_path()
         
-        # If arguments are missing, try to infer from current config/runtime if possible,
-        # but the original signature required them usually. 
-        # For strict compatibility with the refactor request "change nothing about the function",
-        # I will assume the caller provides them, or I default to what the original did.
-        # The original function signature had them as required args (except optionals).
-        # note: original function used 'runtime.cfg' inside if output_dir was None.
-        
-        # We need to handle the case where the caller might rely on 'runtime' globals in the original code,
-        # but here we are part of runtime.
-        
+        # Infer configuration if arguments are missing
         cfg = self.cfg
         if monkey_name is None: monkey_name = cfg.get_monkey_name()
-        # analysis_type and group_size are mandatory in the original function signature usually passed from analyzer.
-        # However, to be safe, I'll raise error if they are missing and needed.
+        
+        # Verify required arguments
         if analysis_type is None: raise ValueError("analysis_type is required")
         if group_size is None: raise ValueError("group_size is required")
 

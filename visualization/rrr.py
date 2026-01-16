@@ -5,6 +5,7 @@ from matplotlib import gridspec
 import matplotlib.patheffects as pe
 from core.runtime import runtime
 from methods.rrr import RRRAnalyzer
+from methods.pca import RegionPCA
 
 def plot_rrr_ridge_comparison(
     source_region: int = 1,
@@ -77,7 +78,16 @@ def plot_rrr_ridge_comparison(
 
         if alpha is None:
             Xc = X - X.mean(0, keepdims=True)
-            sing_vals.append(int(round(np.linalg.svd(Xc, compute_uv=False)[0])))
+            # Use RegionPCA for consistency
+            pca = RegionPCA(centered=False).fit(Xc)
+            # RegionPCA stores variances: lambda = s^2 / (N-1)
+            # So s = sqrt(lambda * (N-1))
+            # We take the top component (idx 0)
+            top_var = pca.eigenvalues_[0] if pca.eigenvalues_ is not None else 0.0
+            n_samples = Xc.shape[0]
+            top_s_val = np.sqrt(top_var * max(1, n_samples - 1))
+            
+            sing_vals.append(int(round(top_s_val)))
             
             lam_vec, _ = RRRAnalyzer._lambda_grid(X)
             chosen = res["lambdas"]

@@ -80,16 +80,10 @@ class RegionPCA:
         comps = self.get_components(n_components)
         
         if self.centered:
-             X_centered = X - X.mean(axis=0, keepdims=True) # Note: usually transform uses mean from fit
-             # For strict PCA, we should subtract the mean of the training set.
-             # In this codebase context (kyle_method), centering happens per matrix usually.
-             # But let's assume standard behavior: we should save the mean?
-             # For now, to match `compute_variational_space` which just takes X, 
-             # we follow its logic: it computes SVD on Center(X).
-             pass
-
-        # Since kyle_method's compute_variational_space doesn't RETURN a transformer, 
-        # but just returns components, this transform method is extra utility.
+             # Transform uses mean from fit typically, but here we assume simple centering
+             X_centered = X - X.mean(axis=0, keepdims=True)
+             return X_centered @ comps.T
+        
         return X @ comps.T
     
     @property

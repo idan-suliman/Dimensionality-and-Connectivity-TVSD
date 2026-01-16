@@ -77,13 +77,14 @@ class RUNTIME:
         self._group_size = value
     
     
-    def update(self, monkey_name: str, z_score_index: int, analysis_type: str = None, group_size: int = None):
+    def update(self, monkey_name: str, z_score_index: int, analysis_type: str = None, group_size: int = 3,
+               cv_outer_splits: int | None = None, cv_inner_splits: int | None = None, n_permutations: int | None = None):
         self._monkey_name = monkey_name
         self._z_score_index = z_score_index
         self._analysis_type = analysis_type
         self._group_size = group_size
 
-        self._cfg = CONFIG(monkey_name, z_score_index)
+        self._cfg = CONFIG(monkey_name, z_score_index, cv_outer_splits, cv_inner_splits, n_permutations)
         self._paths = Paths(self._cfg, self._consts)
         self._data_manager = DataManager(self._cfg)
 
