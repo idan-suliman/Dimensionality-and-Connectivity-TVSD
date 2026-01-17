@@ -55,6 +55,7 @@ def analyze_region(analyzer, region_id: int, fixed_d: int | None = None) -> Dict
         "d_common": D_common,
         "spearman_rho": rho,
         "p_value": p_val,
+        "perm_rhos": res_stats.get("perm_rhos", []),
         "monkey": analyzer.monkey,
         "z_code": analyzer.z_code,
         "method": analyzer.analysis_type,

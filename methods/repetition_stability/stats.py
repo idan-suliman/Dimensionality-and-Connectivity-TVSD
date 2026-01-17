@@ -48,4 +48,50 @@ def compute_lag_stats(analyzer, O: np.ndarray, n_perms: int | None = None) -> di
     # We expect rho to be negative (decay).
     p_val = (np.sum(perm_rhos <= rho_obs) + 1) / (n_perms + 1)
     
-    return {"rho": rho_obs, "p_val": p_val}
+    return {"rho": rho_obs, "p_val": p_val, "perm_rhos": perm_rhos}
+
+
+def compute_r2_lag_stats(r2s: np.ndarray, n_perms: int | None = None) -> dict:
+    """
+    Spearman Correlation (Lag vs Pairwise Mean R2) + Permutation Test.
+    """
+    if n_perms is None:
+        n_perms = runtime.cfg.n_permutations
+        
+    N = len(r2s)
+    if N < 2:
+        return {"rho": 0.0, "p_val": 1.0, "perm_rhos": []}
+
+    def _get_lag_pairs(arr):
+        xs, ys = [], []
+        # Loop over all possible lags
+        for l in range(1, N): 
+            # Loop over all pairs with this lag
+            for i in range(N - l):
+                 val = (arr[i] + arr[i+l]) / 2.0
+                 xs.append(l)
+                 ys.append(val)
+        return xs, ys
+
+    # Observed
+    xs, ys = _get_lag_pairs(r2s)
+    if len(xs) < 2:
+         return {"rho": 0.0, "p_val": 1.0, "perm_rhos": []}
+         
+    rho_obs, _ = spearmanr(xs, ys)
+
+    # Permutation Test
+    rng = np.random.default_rng(42)
+    perm_rhos = np.zeros(n_perms)
+    
+    for i in range(n_perms):
+        p_idx = rng.permutation(N)
+        r2s_perm = r2s[p_idx]
+        xs_p, ys_p = _get_lag_pairs(r2s_perm)
+        r, _ = spearmanr(xs_p, ys_p)
+        perm_rhos[i] = r
+        
+    # P-value (One-tailed, expecting decay/negative correlation)
+    p_val = (np.sum(perm_rhos <= rho_obs) + 1) / (n_perms + 1)
+    
+    return {"rho": rho_obs, "p_val": p_val, "perm_rhos": perm_rhos}

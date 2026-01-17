@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from typing import Dict, Any
 from ..rrr import RRRAnalyzer
-from .stats import compute_lag_stats, compute_overlap_msc
+from .stats import compute_lag_stats, compute_overlap_msc, compute_r2_lag_stats
 
 def analyze_connection(analyzer, src_id: int, tgt_id: int, fixed_d: int | None = None) -> Dict[str, Any]:
     """
@@ -84,6 +84,9 @@ def analyze_connection(analyzer, src_id: int, tgt_id: int, fixed_d: int | None =
     res_stats = compute_lag_stats(analyzer, overlap_matrix)
     rho, p_val = res_stats["rho"], res_stats["p_val"]
     
+    # 6. R2 Stats
+    r2_stats = compute_r2_lag_stats(np.array(block_r2_vals))
+    
     return {
         "type": "connection",
         "src_id": src_id,
@@ -93,6 +96,10 @@ def analyze_connection(analyzer, src_id: int, tgt_id: int, fixed_d: int | None =
         "block_r2s": block_r2_vals, # Mean R2 performance
         "spearman_rho": rho,
         "p_value": p_val,
+        "perm_rhos": res_stats.get("perm_rhos", []),
+        "r2_rho": r2_stats["rho"],
+        "r2_p_val": r2_stats["p_val"],
+        "perm_r2s": r2_stats["perm_rhos"],
         "monkey": analyzer.monkey,
         "z_code": analyzer.z_code,
         "method": analyzer.analysis_type,

@@ -3,7 +3,7 @@ import numpy as np
 from core.runtime import runtime
 
 
-def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool = False):
+def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool = False, show_permutation: bool = False):
     """
     Executes the full repetition stability analysis pipeline:
     1. Checks for existing cached data (unless force_recompute=True).
@@ -83,10 +83,11 @@ def run_pipeline(analyzer, regions=None, connections=None, force_recompute: bool
             analyzer.save_results(res, base_data_path)
             all_results.append(res)
 
-    # 4. Visualization
+    # Visualization
     print(f"    > Generating Plots...")
     plot_repetition_stability(
         all_results,
         out_dir=str(base_data_path),
-        show_errorbars=True
+        show_errorbars=True,
+        show_permutation=show_permutation
     )

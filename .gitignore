@@ -14,3 +14,4 @@ drivers/plot_driver.py
 drivers/plot_dim_corr.py
 drivers/driver_semedo.py
 drivers/verify_all_plots.py
+drivers/driver_repetiton_stability_run.py

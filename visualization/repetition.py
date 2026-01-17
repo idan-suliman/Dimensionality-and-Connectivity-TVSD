@@ -12,7 +12,8 @@ def plot_repetition_stability(
     results: list[dict],
     out_dir: str | None = None,
     show_errorbars: bool = True,
-    title_suffix: str = ""
+    title_suffix: str = "",
+    show_permutation: bool = False
 ):
     """
     Plots the Repetition Stability curve (Mean Overlap vs Lag).
@@ -28,10 +29,10 @@ def plot_repetition_stability(
     
     # Styles - Distinct colors for Region vs Connection
     colors = {
-        # Regions: Blue, Orange, Green (Standard categorical)
-        1: "tab:blue", 2: "tab:orange", 3: "tab:green",
-        # Connections (src, tgt): Red, Purple, Brown (Distinct from above)
-        (1, 2): "tab:red", (1, 3): "tab:purple", (2, 3): "tab:brown"
+        # Regions: Blue, Orange, RED (Changed to avoid conflict)
+        1: "tab:blue", 2: "tab:orange", 3: "tab:red",
+        # Connections (src, tgt): GREEN (V1->V4), Purple, Brown
+        (1, 2): "tab:green", (1, 3): "tab:purple", (2, 3): "tab:brown"
     }
     region_map = runtime.consts.REGION_ID_TO_NAME
     
@@ -155,29 +156,142 @@ def plot_repetition_stability(
         p.mkdir(parents=True, exist_ok=True)
         # Construct filename from first result metadata
         r0 = results[0]
-        # Construct filename using helper
-        fname = runtime.paths.get_rep_stability_path(
-            output_dir="",
-            monkey_name=r0["monkey"],
-            analysis_type=r0["method"], 
-            group_size=r0["block_size"],
-            region_id=int(r0["region_id"]) if r0["type"] == "region" else None,
-            src_tgt=(int(r0["src_id"]), int(r0["tgt_id"])) if r0["type"] == "connection" else None,
-            extension=".png"
-        ).name 
-
+        
+        # Determine unique regions and connected present
+        r_ids = sorted(list(set(int(r["region_id"]) for r in results if r["type"] == "region")))
+        c_ids = sorted(list(set((int(r["src_id"]), int(r["tgt_id"])) for r in results if r["type"] == "connection")))
+        
+        # Logic: If single item, use standard naming. If multiple, create composite name via suffix.
+        if len(results) == 1:
+            region_arg = int(r0["region_id"]) if r0["type"] == "region" else None
+            conn_arg = (int(r0["src_id"]), int(r0["tgt_id"])) if r0["type"] == "connection" else None
+            suffix_arg = ""
+        else:
+            region_arg = None
+            conn_arg = None
+            
+            parts = []
+            if r_ids:
+                parts.append("Reg" + "".join(str(i) for i in r_ids))
+            if c_ids:
+                parts.append("Conn" + "".join(f"{s}{t}" for s, t in c_ids))
+            
+            suffix_arg = "_" + "_".join(parts)
+            
         full_path = runtime.paths.get_rep_stability_path(
             output_dir=out_dir,
             monkey_name=r0["monkey"],
             analysis_type=r0["method"],
             group_size=r0["block_size"],
-            region_id=int(r0["region_id"]) if r0["type"] == "region" else None,
-            src_tgt=(int(r0["src_id"]), int(r0["tgt_id"])) if r0["type"] == "connection" else None,
+            region_id=region_arg,
+            src_tgt=conn_arg,
+            suffix=suffix_arg,
             extension=".png"
         )
         
         fig.savefig(full_path, dpi=300, bbox_inches="tight")
         print(f"[✓] Stability Plot Saved → {full_path}")
+        plt.close(fig)
+        
+        # Optional: Plot Permutation Test
+        if show_permutation:
+             plot_permutation_test(results, out_dir, suffix_arg)
+             
+    else:
+        plt.show()
+
+def plot_permutation_test(results: list[dict], out_dir: str, suffix: str = ""):
+    """
+    Plots histogram of permutation test results for each analyzed item.
+    """
+    import seaborn as sns
+    from matplotlib import gridspec
+    
+    # Collect all things to plot
+    # Each item: (title, color, obs, pval, dist, label_prefix)
+    plot_items = []
+    
+    for res in results:
+        # 1. Overlap (All types)
+        if "perm_rhos" in res:
+            if res["type"] == "region":
+                nm = runtime.consts.REGION_ID_TO_NAME[int(res["region_id"])]
+                title = f"{nm} (Region) - Overlap"
+                color = "tab:blue"
+            else:
+                s = runtime.consts.REGION_ID_TO_NAME[int(res["src_id"])]
+                t = runtime.consts.REGION_ID_TO_NAME[int(res["tgt_id"])]
+                title = f"{s} → {t} - Overlap"
+                color = "tab:purple"
+            
+            plot_items.append({
+                "title": title,
+                "color": color,
+                "dist": res["perm_rhos"],
+                "obs": res["spearman_rho"],
+                "pval": res["p_value"],
+                "xlabel": "Spearman Correlation (ρ)"
+            })
+            
+        # 2. R2 (Connection only)
+        if res["type"] == "connection" and "perm_r2s" in res and len(res["perm_r2s"]) > 0:
+             s = runtime.consts.REGION_ID_TO_NAME[int(res["src_id"])]
+             t = runtime.consts.REGION_ID_TO_NAME[int(res["tgt_id"])]
+             title = f"{s} → {t} - $R^2$ Stability"
+             color = "tab:brown" # distinct color
+             
+             plot_items.append({
+                "title": title,
+                "color": color,
+                "dist": res["perm_r2s"],
+                "obs": res["r2_rho"],
+                "pval": res["r2_p_val"],
+                "xlabel": "Spearman Correlation (Lag vs $R^2$)"
+            })
+
+    n_plots = len(plot_items)
+    if n_plots == 0:
+        return
+
+    cols = 3
+    rows = (n_plots + cols - 1) // cols
+    
+    fig = plt.figure(figsize=(5 * cols, 4 * rows), dpi=150)
+    gs = gridspec.GridSpec(rows, cols, figure=fig, hspace=0.4, wspace=0.3)
+    
+    for i, item in enumerate(plot_items):
+        ax = fig.add_subplot(gs[i])
+        
+        perm_rhos = item["dist"]
+        observed = item["obs"]
+        p_val = item["pval"]
+        
+        # Histogram
+        sns.histplot(perm_rhos, kde=True, ax=ax, color='gray', stat='count', element="step", alpha=0.4)
+        ax.axvline(observed, color=item["color"], linestyle='--', linewidth=3, label=f"Observed ρ={observed:.2f}")
+        
+        ax.set_title(f"{item['title']}\np={p_val:.4f}", fontsize=12, fontweight='bold')
+        ax.set_xlabel(item["xlabel"])
+        ax.legend(loc='upper left', fontsize=10)
+        
+    r0 = results[0]
+    monkey = r0["monkey"]
+    
+    if out_dir:
+        # Use the same logic as the main plot to get into the correct subdirectory
+        full_path = runtime.paths.get_rep_stability_path(
+            output_dir=out_dir,
+            monkey_name=monkey,
+            analysis_type=r0["method"],
+            group_size=r0["block_size"],
+            region_id=None, # Generic
+            src_tgt=None,   # Generic
+            suffix=f"_PermutationTest{suffix}",
+            extension=".png"
+        )
+        
+        fig.savefig(full_path, dpi=200, bbox_inches="tight")
+        print(f"[✓] Permutation Plot Saved → {full_path}")
         plt.close(fig)
     else:
         plt.show()
@@ -217,124 +331,3 @@ def plot_overlap_matrix(overlap_matrix: np.ndarray, D_common: int, method: str) 
 
     plt.tight_layout()
     plt.show()
-
-def plot_all_overlaps_grid(
-    region: int,
-    monkeys: tuple[str, ...],
-    zscore_codes: tuple[int, ...],
-    methods: tuple[str, ...],
-    results: list[tuple[str, int, str, np.ndarray, int]], 
-    figsize_scale: float = 1.0,
-    cell_size: float = 2.7,
-    gap_suptitle: float = 0.035,
-    save: bool = False,
-    save_dir: Path | None = None,
-    save_dpi: int = 400,
-    show: bool = True
-) -> str | None:
-    """
-    Render a grid of overlap matrices covering multiple monkeys, z-scores, and methods.
-    """
-    consts = runtime.consts
-    region_name = consts.REGION_ID_TO_NAME.get(region, f"Region{region}")
-    
-    R, Z, M = len(monkeys), len(zscore_codes), len(methods)
-    C = Z * M
-
-    cs = float(cell_size) * float(figsize_scale)
-    fig_w = cs * C
-    head_h_z   = 0.20
-    head_h_met = 0.10
-    cbar_h     = 0.10
-    fig_h = cs * (R + head_h_z + head_h_met + cbar_h)
-    fig = plt.figure(figsize=(fig_w, fig_h))
-
-    height_ratios = [head_h_z, head_h_met] + [1] * R + [cbar_h]
-    gs = gridspec.GridSpec(
-        nrows=len(height_ratios), ncols=C, figure=fig,
-        height_ratios=height_ratios,
-        hspace=0.15, wspace=0.1
-    )
-
-    axes = np.empty((R, C), dtype=object)
-    last_im = None
-    
-    # --- Matrix Plotting Loop ---
-    for m, z, met, O, D in results:
-        r = monkeys.index(m)
-        c = zscore_codes.index(z) * M + methods.index(met)
-        ax = fig.add_subplot(gs[2 + r, c])
-        axes[r, c] = ax
-
-        last_im = ax.imshow(O, vmin=0, vmax=1, cmap="viridis")
-        ax.text(0.985, 0.05, f"D={D}", transform=ax.transAxes,
-                ha="right", va="bottom", fontsize=9, color="w",
-                bbox=dict(facecolor="k", alpha=0.25, pad=2, edgecolor="none"))
-        
-        ax.set_xticks([0, 29], [1, 30])          
-        ax.set_yticks([0, 29], [1, 30])
-        ax.tick_params(axis='both', length=0, width=0, labelsize=6)
-        ax.tick_params(axis='x', pad=1, bottom=False, top=True, labelbottom=False, labeltop=True, labelsize=6)
-        ax.tick_params(axis='y', pad=1, labelsize=6)
-        ax.set_box_aspect(1)
-        for spine in ax.spines.values(): spine.set_visible(False)
-
-    fig.canvas.draw()
-
-    # --- Headers ---
-    header_axes_z = []
-    for zi, z in enumerate(zscore_codes):
-        c0, c1 = zi * M, zi * M + (M - 1)
-        ax_z = fig.add_subplot(gs[0, c0:c1+1])
-        ax_z.axis("off")
-        ax_z.text(0.5, 0.25, f"{consts.ZSCORE_INFO[z][0]}", transform=ax_z.transAxes,
-                  ha="center", va="center", fontsize=11, fontweight="bold")
-        header_axes_z.append(ax_z)
-        for mi, met in enumerate(methods):
-            ax_m = fig.add_subplot(gs[1, zi * M + mi])
-            ax_m.axis("off")
-            ax_m.text(0.5, 0.15, met, transform=ax_m.transAxes,
-                      ha="center", va="bottom", fontsize=11)
-
-    # --- Row Labels ---
-    first_col_left = axes[0, 0].get_position().x0
-    label_x = first_col_left - 0.010
-    for r, m in enumerate(monkeys):
-        y0, y1 = axes[r, 0].get_position().y0, axes[r, 0].get_position().y1
-        cy = (y0 + y1) / 2.0
-        fig.text(label_x, cy, m, ha="right", va="center", rotation=90, fontsize=13, fontweight="bold")
-
-    # --- Main Title ---
-    top_of_z_headers = max(ax.get_position().y1 for ax in header_axes_z)
-    suptitle_y = min(0.99, top_of_z_headers + gap_suptitle)
-    fig.suptitle(f"Repetitions Subspace Overlap (D-mean) — {region_name}\n",
-                 fontsize=22, y=suptitle_y, fontweight="bold")
-
-    # --- Colorbar ---
-    if C >= 6:
-        cax = fig.add_subplot(gs[-1, 2:C-2]) # Center it reasonably
-    else:
-        cax = fig.add_subplot(gs[-1, :]) 
-        
-    cbar = fig.colorbar(last_im, cax=cax, orientation="horizontal")
-    cbar.set_label("Subspace Overlap", fontsize=12)
-
-    # --- Save ---
-    saved_path = None
-    if save:
-        base_dir = Path(save_dir) if save_dir is not None else (runtime.consts.BASE_DIR / "PLOTS_HEAT_MAP")
-        base_dir.mkdir(parents=True, exist_ok=True)
-        mtag = "M-" + "-".join(m.replace(" ", "") for m in monkeys)
-        ztag = "Z-" + "-".join(str(z) for z in zscore_codes)
-        atag = "A-" + "-".join(methods)
-        fname = f"{mtag}__{ztag}__{atag}__{region_name}.png"
-        out_path = base_dir / fname
-        fig.savefig(out_path, dpi=save_dpi, facecolor="white", bbox_inches="tight")
-        saved_path = str(out_path)
-        print(f"[✓] Saved heatmap grid → {saved_path}")
-
-    if show:
-        plt.show()
-    else:
-        plt.close(fig)
-    return saved_path

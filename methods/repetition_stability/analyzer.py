@@ -66,5 +66,5 @@ class RepetitionStabilityAnalyzer:
             output_dir=output_dir 
         )
 
-    def run_pipeline(self, force_recompute: bool = False):
-        pipeline.run_pipeline(self, force_recompute)
+    def run_pipeline(self, regions=None, connections=None, force_recompute: bool = False, show_permutation: bool = False):
+        pipeline.run_pipeline(self, regions=regions, connections=connections, force_recompute=force_recompute, show_permutation=show_permutation)
