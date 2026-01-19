@@ -1,6 +1,6 @@
 # TVSD_CODE — THINGS Ventral Stream Spiking Dataset (TVSD) – Analysis Toolkit
 
-> Large-scale electrophysiological analyses for macaque **V1, V4, IT** (TVSD), including full preprocessing, Z-score variants, residuals, dimensionality, and cross-area prediction via **Reduced-Rank Regression (RRR)**.
+> Large-scale electrophysiological analyses for macaque **V1, V4, IT** (TVSD), including full preprocessing, Z-score variants, residuals, dimensionality, cross-area prediction via **Reduced-Rank Regression (RRR)**, and **Subspace Overlap Analysis**.
 
 **Author:** Idan Suliman  
 **Thesis:** M.Sc., Bar-Ilan University — Gonda Multidisciplinary Brain Research Center  
@@ -47,7 +47,7 @@ TVSD_CODE/
 │  └─ databuilder.py            # Preprocessing & Normalization
 │
 ├─ methods/                     # Scientific Methods
-│  ├─ dimensionality_correlation/ # Stability vs Dimensionality
+│  ├─ dimensionality_correlation/ # Stability & Overlap vs Dimensionality
 │  ├─ repetition_stability/     # Subspace stability analysis
 │  ├─ rrr/                      # Reduced Rank Regression logic
 │  ├─ Semedo/                   # Semedo 2019 replication logic
@@ -59,10 +59,11 @@ TVSD_CODE/
 │  ├─ repetition.py             # Repetition stability plots
 │  ├─ rrr.py                    # RRR/Ridge comparison plots
 │  ├─ dim_corr.py               # Dimensionality correlation plots
+│  ├─ dim_vs_overlap_plot.py    # Overlap analysis plots
 │  └─ utils.py                  # Shared visualization helpers
 │
 └─ drivers/                     # Execution Drivers
-   └─ driver.py                 # Main Repetition Stability Analysis
+   └─ driver.py                 # Main driver
 ```
 
 ![Architecture](images_for_readme/packages_TVSD_CODE.png)

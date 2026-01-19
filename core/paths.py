@@ -115,6 +115,39 @@ class Paths:
 
         return target_dir / fname
 
+    def get_dim_vs_overlap_path(
+        self,
+        monkey_name: str | None = None,
+        analysis_type: str | None = None,
+        src_tgt: Tuple[int, int] | None = None,
+        suffix: str = "",
+        extension: str = ".png",
+        output_dir: str | Path | None = None
+    ) -> Path:
+        """
+        Generate consistent filename for Dimensionality vs Overlap.
+        """
+        if output_dir is None:
+            output_dir = self.get_data_path()
+        if monkey_name is None: monkey_name = self.cfg.get_monkey_name()
+        if analysis_type is None: analysis_type = "window" # Default
+
+        base = Path(output_dir) / "Dimensionality_vs_Overlap"
+        mk = monkey_name.replace(" ", "")
+
+        # Target directory
+        target_dir = base / "Dimensionality_vs_Overlap_plots"
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        if src_tgt is not None:
+             s = self.consts.REGION_ID_TO_NAME.get(src_tgt[0], f"Reg{src_tgt[0]}")
+             t = self.consts.REGION_ID_TO_NAME.get(src_tgt[1], f"Reg{src_tgt[1]}")
+             fname = f"{mk}_{s}_to_{t}_{analysis_type}_DimVsOverlap{suffix}{extension}"
+        else:
+             fname = f"{mk}_{analysis_type}_DimVsOverlap{suffix}{extension}"
+
+        return target_dir / fname
+
     # =========================================================================
     # Repetition Stability
     # From: methods/repetition_stability/utils.py

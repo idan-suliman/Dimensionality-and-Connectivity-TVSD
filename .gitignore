@@ -15,3 +15,6 @@ drivers/plot_dim_corr.py
 drivers/driver_semedo.py
 drivers/verify_all_plots.py
 drivers/driver_repetiton_stability_run.py
+drivers/driver_plot_matching.py
+drivers/driver_single_elec_plot.py
+drivers/driver_dim_vs_overlap.py

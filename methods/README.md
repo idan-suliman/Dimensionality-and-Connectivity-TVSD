@@ -7,7 +7,7 @@ This directory contains the core scientific algorithms and analysis pipelines us
 | Package | Purpose |
 | :--- | :--- |
 
-| **[`dimensionality_correlation`](./dimensionality_correlation/)** | Analyzes the stability of neural subspaces across dimensions. |
+| **[`dimensionality_correlation`](./dimensionality_correlation/)** | Analyzes the stability of neural subspaces across dimensions, and computes the overlap between intrinsic and predictive subspaces. |
 | **[`matchingSubset`](./matchingSubset.py)** | Logic for finding "matched" electrode subsets (aligning V1 firing rates with Target variance). |
 | **[`pca`](./pca.py)** | Dimensionality reduction utilities (PCA helpers). |
 | **[`repetition_stability`](./repetition_stability/)** | Analyzes the stability of neural representations across repeated stimuli blocks. |
